@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "../contexts/AuthContext";
 import { Link } from "wouter";
-import { Lock, BookOpen, Video, FileText, Compass, Heart, ExternalLink } from "lucide-react";
+import { Lock, BookOpen, Video, FileText, Compass, Heart, ExternalLink, Clock } from "lucide-react";
 
 const TYPE_ICONS: Record<string, any> = {
   devotional: Heart,
@@ -25,10 +25,20 @@ export default function Resources() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
       <div className="mb-10">
-        <h1 className="text-4xl font-black mb-3" data-testid="heading-resources">Resource Library</h1>
+        <h1 className="text-4xl font-black mb-3" data-testid="heading-resources">Cornerstone Resource Library</h1>
         <p className="text-muted-foreground text-lg max-w-xl">
-          Devotionals, tools, templates, and guides — all rooted in Biblical wisdom to help you grow your Kingdom business.
+          Devotionals, tools, templates, and guides — all rooted in Biblical wisdom to help you grow your business.
         </p>
+        {/* Coming Soon Banner */}
+        <div className="mt-6 p-5 rounded-xl border border-primary/40 bg-primary/5 flex items-start gap-4">
+          <div className="w-10 h-10 crimson-gradient rounded-full flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-[hsl(38,20%,96%)]" />
+          </div>
+          <div>
+            <p className="font-black text-foreground text-base mb-1">Resources Coming Soon</p>
+            <p className="text-sm text-muted-foreground">We're building a library of devotionals, business templates, and faith-aligned guides exclusively for Cornerstone members. Check back soon.</p>
+          </div>
+        </div>
         <p className="verse-block mt-4 text-sm max-w-sm">
           "The beginning of wisdom is this: Get wisdom, and whatever you get, get insight." — Proverbs 4:7
         </p>
@@ -41,7 +51,7 @@ export default function Resources() {
           </div>
           <div>
             <h3 className="font-bold text-sm mb-1">Members-Only Resources</h3>
-            <p className="text-sm text-muted-foreground mb-3">Some resources are exclusively for Kingdom Network members. Join today to unlock the full library.</p>
+            <p className="text-sm text-muted-foreground mb-3">Some resources are exclusively for Cornerstone Directory members. Join today to unlock the full library.</p>
             <div className="flex gap-2">
               <Link href="/register"><Button size="sm" className="crimson-gradient text-[hsl(38,20%,96%)] font-bold shine-btn">Join Now</Button></Link>
               <Link href="/login"><Button size="sm" variant="outline">Sign In</Button></Link>

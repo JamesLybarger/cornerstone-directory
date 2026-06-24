@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { ShoppingBag, Download, Calendar, BookOpen, FileText, Star } from "lucide-react";
+import { ShoppingBag, Download, Calendar, BookOpen, FileText, Star, Clock } from "lucide-react";
 import { Link } from "wouter";
 
 const CATEGORY_ICONS: Record<string, any> = {
@@ -51,10 +51,20 @@ export default function Store() {
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 py-16">
       <div className="mb-10">
-        <h1 className="text-4xl font-black mb-3" data-testid="heading-store">Kingdom Resource Store</h1>
+        <h1 className="text-4xl font-black mb-3" data-testid="heading-store">Cornerstone Resource Store</h1>
         <p className="text-muted-foreground text-lg max-w-xl">
-          Digital tools, coaching sessions, and faith-aligned resources to grow your Kingdom business.
+          Digital tools and faith-aligned resources to grow your Christian business.
         </p>
+        {/* Coming Soon Banner */}
+        <div className="mt-6 p-5 rounded-xl border border-primary/40 bg-primary/5 flex items-start gap-4">
+          <div className="w-10 h-10 crimson-gradient rounded-full flex items-center justify-center shrink-0">
+            <Clock className="w-5 h-5 text-[hsl(38,20%,96%)]" />
+          </div>
+          <div>
+            <p className="font-black text-foreground text-base mb-1">Store Coming Soon</p>
+            <p className="text-sm text-muted-foreground">We're curating faith-aligned digital resources, templates, and tools for Christian business owners. Check back soon — great things are on the way.</p>
+          </div>
+        </div>
         <p className="verse-block mt-4 text-sm max-w-sm">
           "Wealth gained hastily will dwindle, but whoever gathers little by little will increase it." — Proverbs 13:11
         </p>

@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useForm } from "react-hook-form";
 import { Search, MapPin, Globe, Plus, Building2 } from "lucide-react";
+import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
@@ -24,7 +26,7 @@ export default function Directory() {
   const [listOpen, setListOpen] = useState(false);
   const { data: businesses = [], isLoading } = useQuery({
     queryKey: ["/api/businesses"],
-    queryFn: () => fetch("/api/businesses").then(r => r.json()),
+    queryFn: () => apiRequest("GET", "/api/businesses").then(r => r.json()),
   });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -33,11 +35,7 @@ export default function Directory() {
 
   const addBusiness = useMutation({
     mutationFn: async (data: any) => {
-      const res = await fetch("/api/businesses", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, userId: user?.id || 1 }),
-      });
+      const res = await apiRequest("POST", "/api/businesses", { ...data, userId: user?.id || 1 });
       if (!res.ok) throw new Error("Failed to list business");
       return res.json();
     },
