@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 interface AuthUser {
   id: number;
@@ -19,7 +20,7 @@ interface AuthContextType {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
-  register: (data: any) => Promise<{ tier: string; price: number }>;
+  register: (data: any) => Promise<{ user: any; tier: string; price: number }>;
   isLoading: boolean;
 }
 
@@ -62,11 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (data: any) => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
+      const res = await apiRequest("POST", "/api/auth/register", data);
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.error || "Registration failed");
@@ -74,7 +71,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await res.json();
       setUser(result.user);
       setUserId(result.user.id);
-      return { tier: result.tier, price: result.price };
+      return { user: result.user, tier: result.tier, price: result.price };
     } finally {
       setIsLoading(false);
     }
