@@ -103,9 +103,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // REFERRALS
-  // Support both /api/referrals/my/:userId (new) and header-based (legacy)
-  app.get("/api/referrals/my/:userId?", (req, res) => {
-    const userId = parseInt(req.params.userId || req.headers["x-user-id"] as string);
+  // Support both /api/referrals/my/:userId (with userId) and /api/referrals/my (header-based)
+  const handleMyReferrals = (req: Request, res: Response) => {
+    const userId = parseInt((req.params.userId || req.headers["x-user-id"]) as string);
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
     const myReferrals = storage.getReferralsByReferrer(userId);
     const user = storage.getUser(userId);
@@ -115,7 +115,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
       referralCode: user?.referralCode || null,
       count: myReferrals.length,
     });
-  });
+  };
+  app.get("/api/referrals/my/:userId", handleMyReferrals);
+  app.get("/api/referrals/my", handleMyReferrals);
 
   // FOUNDING SPOTS remaining
   app.get("/api/founding-spots", (req, res) => {
@@ -207,7 +209,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // RESOURCES — free = public only, paid = all
-  app.get("/api/resources/:userId?", (req, res) => {
+  const handleResources = (req: Request, res: Response) => {
     const userId = req.params.userId || req.headers["x-user-id"];
     if (userId && userId !== "public") {
       const user = storage.getUser(parseInt(userId as string));
@@ -216,5 +218,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
       }
     }
     res.json(storage.getPublicResources());
-  });
+  };
+  app.get("/api/resources/:userId", handleResources);
+  app.get("/api/resources", handleResources);
 }
