@@ -9,11 +9,11 @@ const FOUNDING_LIMIT = 500;
 
 export function registerStripeRoutes(app: Express) {
   const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
-    apiVersion: "2025-05-28.basil" as any,
+    apiVersion: "2024-06-20",
   });
 
   const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
-  const APP_URL = process.env.APP_URL || "http://localhost:5000";
+  const APP_URL = (process.env.APP_URL || "https://cornerstonedirectory.com").replace(/\/$/, "");
 
   // ── CREATE CHECKOUT SESSION ───────────────────────────────────────────────
   app.post("/api/stripe/create-checkout", async (req, res) => {
@@ -69,8 +69,8 @@ export function registerStripeRoutes(app: Express) {
       const session = await stripe.checkout.sessions.create(sessionParams);
       res.json({ url: session.url, sessionId: session.id });
     } catch (e: any) {
-      console.error("Stripe checkout error:", e.message);
-      res.status(500).json({ error: e.message });
+      console.error("Stripe checkout error:", e.message, e.type, e.code);
+      res.status(500).json({ error: e.message, type: e.type, code: e.code });
     }
   });
 
