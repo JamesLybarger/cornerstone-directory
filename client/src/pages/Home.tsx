@@ -9,11 +9,11 @@ import {
 } from "lucide-react";
 
 export default function Home() {
-  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: () => fetch("/api/stats").then(r => r.json()) });
-  const { data: founding } = useQuery({ queryKey: ["/api/founding-spots"], queryFn: () => fetch("/api/founding-spots").then(r => r.json()) });
-  const { data: featuredPost } = useQuery({ queryKey: ["/api/posts/featured"], queryFn: () => fetch("/api/posts/featured").then(r => r.json()) });
-  const { data: featuredProducts = [] } = useQuery({ queryKey: ["/api/products/featured"], queryFn: () => fetch("/api/products/featured").then(r => r.json()) });
-  const { data: featuredBiz = [] } = useQuery({ queryKey: ["/api/businesses/featured"], queryFn: () => fetch("/api/businesses/featured").then(r => r.json()) });
+  const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: () => apiRequest("GET", "/api/stats").then(r => r.json()) });
+  const { data: founding } = useQuery({ queryKey: ["/api/founding-spots"], queryFn: () => apiRequest("GET", "/api/founding-spots").then(r => r.json()) });
+  const { data: featuredPost } = useQuery({ queryKey: ["/api/posts/featured"], queryFn: () => apiRequest("GET", "/api/posts/featured").then(r => r.json()) });
+  const { data: featuredProducts = [] } = useQuery({ queryKey: ["/api/products/featured"], queryFn: () => apiRequest("GET", "/api/products/featured").then(r => r.json()) });
+  const { data: featuredBiz = [] } = useQuery({ queryKey: ["/api/businesses/featured"], queryFn: () => apiRequest("GET", "/api/businesses/featured").then(r => r.json()) });
 
   const spotsLeft = founding?.remaining ?? "…";
   const isFull = founding?.isFull ?? false;

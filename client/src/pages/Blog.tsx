@@ -8,7 +8,7 @@ import { Calendar, ArrowRight } from "lucide-react";
 export default function Blog() {
   const { data: posts = [], isLoading } = useQuery({
     queryKey: ["/api/posts"],
-    queryFn: () => fetch("/api/posts").then(r => r.json()),
+    queryFn: () => apiRequest("GET", "/api/posts").then(r => r.json()),
   });
 
   const categories = ["All", ...Array.from(new Set(posts.map((p: any) => p.category)))];

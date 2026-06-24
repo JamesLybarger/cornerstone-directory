@@ -22,7 +22,7 @@ export default function Store() {
   const [activeCategory, setActiveCategory] = useState("all");
   const { data: products = [], isLoading } = useQuery({
     queryKey: ["/api/products"],
-    queryFn: () => fetch("/api/products").then(r => r.json()),
+    queryFn: () => apiRequest("GET", "/api/products").then(r => r.json()),
   });
   const { user } = useAuth();
   const { toast } = useToast();
@@ -30,11 +30,7 @@ export default function Store() {
   const purchase = useMutation({
     mutationFn: async (product: any) => {
       if (!user) throw new Error("Please sign in to purchase.");
-      const res = await fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": String(user.id) },
-        body: JSON.stringify({ userId: user.id, productId: product.id, amount: product.price, status: "completed" }),
-      });
+      const res = await apiRequest("POST", "/api/orders", { userId: user.id, productId: product.id, amount: product.price, status: "completed" });
       if (!res.ok) throw new Error("Order failed");
       return res.json();
     },

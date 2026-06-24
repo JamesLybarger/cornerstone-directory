@@ -103,8 +103,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // REFERRALS
-  app.get("/api/referrals/my", (req, res) => {
-    const userId = parseInt(req.headers["x-user-id"] as string);
+  // Support both /api/referrals/my/:userId (new) and header-based (legacy)
+  app.get("/api/referrals/my/:userId?", (req, res) => {
+    const userId = parseInt(req.params.userId || req.headers["x-user-id"] as string);
     if (!userId) return res.status(401).json({ error: "Not authenticated" });
     const myReferrals = storage.getReferralsByReferrer(userId);
     const user = storage.getUser(userId);
@@ -206,9 +207,9 @@ export function registerRoutes(httpServer: Server, app: Express) {
   });
 
   // RESOURCES — free = public only, paid = all
-  app.get("/api/resources", (req, res) => {
-    const userId = req.headers["x-user-id"];
-    if (userId) {
+  app.get("/api/resources/:userId?", (req, res) => {
+    const userId = req.params.userId || req.headers["x-user-id"];
+    if (userId && userId !== "public") {
       const user = storage.getUser(parseInt(userId as string));
       if (user && user.membershipTier !== "free") {
         return res.json(storage.getMemberResources());

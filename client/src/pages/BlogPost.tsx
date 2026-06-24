@@ -10,7 +10,7 @@ export default function BlogPost() {
 
   const { data: post, isLoading } = useQuery({
     queryKey: ["/api/posts", slug],
-    queryFn: () => fetch(`/api/posts/${slug}`).then(r => r.json()),
+    queryFn: () => apiRequest("GET", `/api/posts/${slug}`).then(r => r.json()),
     enabled: !!slug,
   });
 

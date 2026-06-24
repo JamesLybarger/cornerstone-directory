@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation, useSearch } from "wouter";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -18,13 +19,13 @@ export default function Dashboard() {
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["/api/orders/user", user?.id],
-    queryFn: () => fetch(`/api/orders/user/${user?.id}`).then(r => r.json()),
+    queryFn: () => apiRequest("GET", `/api/orders/user/${user?.id}`).then(r => r.json()),
     enabled: !!user,
   });
 
   const { data: referralData } = useQuery({
     queryKey: ["/api/referrals/my", user?.id],
-    queryFn: () => fetch("/api/referrals/my", { headers: { "x-user-id": String(user?.id) } }).then(r => r.json()),
+    queryFn: () => apiRequest("GET", `/api/referrals/my/${user?.id}`).then(r => r.json()),
     enabled: !!user && user.membershipTier !== "free",
   });
 

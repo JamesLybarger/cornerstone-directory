@@ -19,7 +19,7 @@ export default function Resources() {
   const { user } = useAuth();
   const { data: resources = [], isLoading } = useQuery({
     queryKey: ["/api/resources", user?.id],
-    queryFn: () => fetch("/api/resources", { headers: user ? { "x-user-id": String(user.id) } : {} }).then(r => r.json()),
+    queryFn: () => apiRequest("GET", `/api/resources/${user?.id || "public"}`).then(r => r.json()),
   });
 
   return (
