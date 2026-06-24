@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingBag, BookOpen, CheckCircle, ArrowRight, Lock, Gift, Copy, DollarSign, PartyPopper } from "lucide-react";
+import { ShoppingBag, BookOpen, CheckCircle, ArrowRight, Lock, Gift, Copy, DollarSign, PartyPopper, Users } from "lucide-react";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();

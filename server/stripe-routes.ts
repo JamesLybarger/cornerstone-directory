@@ -70,7 +70,14 @@ export function registerStripeRoutes(app: Express) {
       res.json({ url: session.url, sessionId: session.id });
     } catch (e: any) {
       console.error("Stripe checkout error:", e.message, e.type, e.code);
-      res.status(500).json({ error: e.message, type: e.type, code: e.code });
+      // Provide human-friendly message for common Stripe errors
+      let friendlyMessage = e.message;
+      if (e.code === "account_invalid" || e.type === "StripeInvalidRequestError") {
+        friendlyMessage = "Payment processing is being set up. Please contact us at contact@cornerstonedirectory.com to complete your membership.";
+      } else if (e.type === "StripeAuthenticationError") {
+        friendlyMessage = "Payment system configuration error. Please contact contact@cornerstonedirectory.com.";
+      }
+      res.status(500).json({ error: friendlyMessage, type: e.type, code: e.code });
     }
   });
 
