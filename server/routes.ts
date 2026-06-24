@@ -43,6 +43,7 @@ export function registerRoutes(httpServer: Server, app: Express) {
         }
       }
 
+      // Create account as FREE/inactive — Stripe webhook upgrades to paid after payment
       const user = storage.createUser({
         email, password, firstName, lastName,
         businessName: businessName || null,
@@ -50,25 +51,17 @@ export function registerRoutes(httpServer: Server, app: Express) {
         city: city || null,
         phone: null, bio: null, avatarUrl: null,
         role: "member",
-        membershipTier: tier,
-        membershipPrice: price,
-        referralCode: null, // auto-set in storage.createUser
+        membershipTier: "free",  // stays free until Stripe payment confirmed
+        membershipPrice: 0,
+        referralCode: null,
         referredBy: referrerId,
         referralCredit: 0,
         joinedAt: new Date().toISOString(),
-        isActive: true,
+        isActive: false,  // activated by Stripe webhook on payment
       });
 
-      // Award $4.99 credit to referrer if new member is annual/founding
-      if (referrerId && (tier === "annual" || tier === "founding")) {
-        storage.addReferralCredit(referrerId, REFERRAL_CREDIT);
-        storage.createReferral({
-          referrerId,
-          referredId: user.id,
-          creditAmount: REFERRAL_CREDIT,
-          appliedToRenewal: false,
-        });
-      }
+      // Store intended tier in user metadata so webhook knows what to upgrade to
+      // (referral credit applied after payment confirmed in webhook)
 
       const { password: _, ...safe } = user;
       res.json({ user: safe, tier, price, foundingSpotsLeft: Math.max(0, FOUNDING_LIMIT - paidCount - 1) });

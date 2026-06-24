@@ -16,6 +16,7 @@ const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","
 
 export default function Register() {
   const [step, setStep] = useState<"form" | "redirecting">("form");
+  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [createdUser, setCreatedUser] = useState<{ id: number; tier: string; referralCode: string } | null>(null);
   const { register: reg, handleSubmit, setValue, watch } = useForm();
   const { register: authRegister, isLoading } = useAuth();
@@ -41,7 +42,17 @@ export default function Register() {
     },
     onSuccess: (data) => {
       if (data.url) {
-        window.location.href = data.url; // redirect to Stripe Checkout
+        setCheckoutUrl(data.url);
+        // Use window.top to break out of iframe if embedded, fallback to window.location
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = data.url;
+          } else {
+            window.location.href = data.url;
+          }
+        } catch {
+          window.open(data.url, "_blank");
+        }
       } else {
         toast({ title: "Checkout error", description: "No checkout URL returned.", variant: "destructive" });
       }
@@ -80,10 +91,24 @@ export default function Register() {
             </strong>{" "}
             membership.
           </p>
-          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm">
+          <div className="flex items-center justify-center gap-2 text-muted-foreground text-sm mb-6">
             <Loader2 className="w-4 h-4 animate-spin" />
             Redirecting to Stripe...
           </div>
+          {checkoutUrl && (
+            <div className="mt-2">
+              <p className="text-xs text-muted-foreground mb-3">Not redirected automatically? Click below:</p>
+              <a
+                href={checkoutUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg font-black text-sm text-[hsl(38,20%,96%)] crimson-gradient"
+              >
+                <CreditCard className="w-4 h-4" />
+                Complete Payment on Stripe →
+              </a>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground mt-6">
             Powered by Stripe — your payment info is never stored on our servers.
           </p>
