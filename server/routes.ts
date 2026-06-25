@@ -161,7 +161,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     try {
       const userId = parseInt(req.headers["x-user-id"] as string);
       const user = userId ? await storage.getUser(userId) : null;
-      if (!user || user.membershipTier === "free") {
+      const isAdmin = user?.role === "admin";
+      if (!user || (user.membershipTier === "free" && !isAdmin)) {
         return res.status(403).json({ error: "A paid membership is required to list your business." });
       }
       const biz = await storage.createBusiness({ ...req.body, userId: user.id, createdAt: new Date().toISOString() });
@@ -176,7 +177,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       const id = parseInt(req.params.id);
       const userId = parseInt(req.headers["x-user-id"] as string);
       const user = userId ? await storage.getUser(userId) : null;
-      if (!user || user.membershipTier === "free") {
+      const isAdmin = user?.role === "admin";
+      if (!user || (user.membershipTier === "free" && !isAdmin)) {
         return res.status(403).json({ error: "A paid membership is required." });
       }
       // Ensure the listing belongs to this user (unless admin)
