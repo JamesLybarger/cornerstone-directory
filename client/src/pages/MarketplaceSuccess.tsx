@@ -34,15 +34,14 @@ export default function MarketplaceSuccess() {
 
     const verify = async () => {
       try {
-        const data = await apiRequest("/api/marketplace/verify-purchase", {
-          method: "POST",
-          body: JSON.stringify({ sessionId, listingId, buyerId: user?.id }),
-        });
+        const res = await apiRequest("POST", "/api/marketplace/verify-purchase", { sessionId, listingId, buyerId: user?.id });
+        const data = await res.json();
         if (data.token) {
           setDownloadToken(data.token);
           // Fetch listing title
           try {
-            const listing = await apiRequest(`/api/marketplace/listings/${listingId}`);
+            const lr = await apiRequest("GET", `/api/marketplace/listings/${listingId}`);
+            const listing = await lr.json();
             setListingTitle(listing.title || "your product");
           } catch {
             setListingTitle("your product");
