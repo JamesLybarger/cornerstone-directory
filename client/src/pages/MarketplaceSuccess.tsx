@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,11 @@ import { CheckCircle, Download, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function MarketplaceSuccess() {
-  // Read params from window.location.search (before the hash) since Stripe
-  // redirects with query string before the hash fragment
-  const params = new URLSearchParams(window.location.search);
-  const sessionId = params.get("session_id");
-  const listingId = params.get("listing_id");
+  // Capture params immediately on mount — before any URL cleanup
+  const [sessionId] = useState(() => new URLSearchParams(window.location.search).get("session_id"));
+  const [listingId] = useState(() => new URLSearchParams(window.location.search).get("listing_id"));
   const { user } = useAuth();
+  const verifiedRef = useRef(false);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
@@ -20,7 +19,18 @@ export default function MarketplaceSuccess() {
   const [listingTitle, setListingTitle] = useState("");
 
   useEffect(() => {
-    if (!sessionId || !listingId) { setStatus("error"); setErrorMsg("Missing session or listing information."); return; }
+    // Only run once — guard against re-runs from user loading
+    if (verifiedRef.current) return;
+    verifiedRef.current = true;
+
+    if (!sessionId || !listingId) {
+      setStatus("error");
+      setErrorMsg("Missing session or listing information.");
+      return;
+    }
+
+    // Clean URL immediately so reload doesn't re-trigger
+    window.history.replaceState({}, "", "/#/marketplace/success");
 
     const verify = async () => {
       try {
@@ -49,7 +59,7 @@ export default function MarketplaceSuccess() {
     };
 
     verify();
-  }, [sessionId, listingId, user?.id]);
+  }, []);
 
   const handleDownload = () => {
     if (downloadToken) {
