@@ -9,13 +9,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { CheckCircle, UserPlus, Star, Gift, CreditCard, Loader2 } from "lucide-react";
+import { CheckCircle, UserPlus, Star, Gift, CreditCard, Loader2, Eye, EyeOff } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const US_STATES = ["AL","AK","AZ","AR","CA","CO","CT","DE","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"];
 
 export default function Register() {
   const [step, setStep] = useState<"form" | "redirecting">("form");
+  const [showPassword, setShowPassword] = useState(false);
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [createdUser, setCreatedUser] = useState<{ id: number; tier: string; referralCode: string } | null>(null);
   const { register: reg, handleSubmit, setValue, watch } = useForm();
@@ -172,7 +173,12 @@ export default function Register() {
               </div>
               <div>
                 <Label>Password *</Label>
-                <Input {...reg("password", { required: true, minLength: 6 })} type="password" placeholder="Min. 6 characters" data-testid="input-password" />
+                <div className="relative">
+                  <Input {...reg("password", { required: true, minLength: 6 })} type={showPassword ? "text" : "password"} placeholder="Min. 6 characters" data-testid="input-password" className="pr-10" />
+                  <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" tabIndex={-1} data-testid="btn-toggle-password">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <div>
                 <Label>Business Name</Label>
