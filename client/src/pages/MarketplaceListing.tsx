@@ -18,7 +18,7 @@ export default function MarketplaceListing() {
   const { data: listing, isLoading } = useQuery({
     queryKey: ["/api/marketplace/listings", id],
     queryFn: async () => {
-      const res = await fetch(`/api/marketplace/listings/${id}`);
+      const res = await apiRequest("GET", `/api/marketplace/listings/${id}`);
       if (!res.ok) return null;
       return res.json();
     },

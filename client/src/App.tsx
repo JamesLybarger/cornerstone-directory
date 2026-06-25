@@ -40,9 +40,9 @@ export default function App() {
               <Route path="/dashboard" component={Dashboard} />
               <Route path="/profile" component={Profile} />
               <Route path="/list-business" component={ListBusiness} />
-              <Route path="/marketplace" component={Marketplace} />
               <Route path="/marketplace/success" component={MarketplaceSuccess} />
               <Route path="/marketplace/:id" component={MarketplaceListing} />
+              <Route path="/marketplace" component={Marketplace} />
               <Route path="/seller/onboard" component={SellerOnboard} />
               <Route path="/seller/new-listing" component={NewListing} />
               <Route path="/seller/dashboard" component={SellerDashboard} />

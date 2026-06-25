@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingCart, Search, Store, Plus, Star, Download, BookOpen, FileText, Hammer, Palette, Lightbulb, Package } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 const CATEGORIES = [
   "All",
@@ -42,7 +43,7 @@ export default function Marketplace() {
       const url = category !== "All"
         ? `/api/marketplace/listings?category=${encodeURIComponent(category)}`
         : "/api/marketplace/listings";
-      const res = await fetch(url);
+      const res = await apiRequest("GET", url);
       return res.json();
     },
   });
