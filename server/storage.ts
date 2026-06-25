@@ -288,6 +288,7 @@ export interface IStorage {
   getFeaturedBusinesses(): Promise<Business[]>;
   createBusiness(business: InsertBusiness): Promise<Business>;
   getBusinessByUserId(userId: number): Promise<Business | undefined>;
+  updateBusiness(id: number, updates: Partial<InsertBusiness>): Promise<Business | undefined>;
   getAllProducts(): Promise<Product[]>;
   getFeaturedProducts(): Promise<Product[]>;
   getProduct(id: number): Promise<Product | undefined>;
@@ -360,6 +361,10 @@ export const storage: IStorage = {
   },
   async getBusinessByUserId(userId) {
     return (await db.select().from(businesses).where(eq(businesses.userId, userId)))[0];
+  },
+  async updateBusiness(id, updates) {
+    const [updated] = await db.update(businesses).set(updates).where(eq(businesses.id, id)).returning();
+    return updated;
   },
   async getAllProducts() {
     return db.select().from(products).where(eq(products.isActive, true));

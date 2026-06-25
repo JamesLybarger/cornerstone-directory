@@ -15,6 +15,7 @@ import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Profile from "./pages/Profile";
+import ListBusiness from "./pages/ListBusiness";
 import NotFound from "./pages/not-found";
 
 export default function App() {
@@ -32,6 +33,7 @@ export default function App() {
               <Route path="/resources" component={Resources} />
               <Route path="/dashboard" component={Dashboard} />
               <Route path="/profile" component={Profile} />
+              <Route path="/list-business" component={ListBusiness} />
               <Route path="/login" component={Login} />
               <Route path="/register" component={Register} />
               <Route component={NotFound} />

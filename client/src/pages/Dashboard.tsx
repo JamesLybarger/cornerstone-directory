@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingBag, BookOpen, CheckCircle, ArrowRight, Lock, Gift, Copy, DollarSign, PartyPopper, Users } from "lucide-react";
+import { ShoppingBag, BookOpen, CheckCircle, ArrowRight, Lock, Gift, Copy, DollarSign, PartyPopper, Users, Building2, Pencil } from "lucide-react";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -55,6 +55,17 @@ export default function Dashboard() {
   };
 
   const isPaid = user.membershipTier !== "free";
+
+  const { data: myBusiness } = useQuery({
+    queryKey: ["/api/businesses/my", user?.id],
+    queryFn: async () => {
+      const res = await apiRequest("GET", `/api/businesses/my/${user?.id}`);
+      if (res.status === 404) return null;
+      return res.json();
+    },
+    enabled: !!user && isPaid,
+    retry: false,
+  });
 
   // Build referral link using current origin
   const referralLink = user.referralCode
@@ -112,9 +123,25 @@ export default function Dashboard() {
               : "Free access — browse the directory and read content."}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => { logout(); setLocation("/"); }} data-testid="btn-logout">
-          Sign Out
-        </Button>
+        <div className="flex items-center gap-2">
+          {isPaid && (
+            <Link href="/list-business">
+              <Button
+                size="sm"
+                className="crimson-gradient text-[hsl(38,20%,96%)] font-bold shine-btn"
+                data-testid="btn-list-business"
+              >
+                {myBusiness
+                  ? <><Pencil className="w-3.5 h-3.5 mr-1.5" /> Edit Listing</>  
+                  : <><Building2 className="w-3.5 h-3.5 mr-1.5" /> List Your Business</>
+                }
+              </Button>
+            </Link>
+          )}
+          <Button variant="outline" size="sm" onClick={() => { logout(); setLocation("/"); }} data-testid="btn-logout">
+            Sign Out
+          </Button>
+        </div>
       </div>
 
       {/* Upgrade prompt for free members */}

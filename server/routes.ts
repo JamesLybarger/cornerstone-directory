@@ -146,6 +146,17 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(await storage.getFeaturedBusinesses());
   });
 
+  app.get("/api/businesses/my/:userId", async (req, res) => {
+    try {
+      const userId = parseInt(req.params.userId);
+      const biz = await storage.getBusinessByUserId(userId);
+      if (!biz) return res.status(404).json({ error: "No listing found" });
+      res.json(biz);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.post("/api/businesses", async (req, res) => {
     try {
       const userId = parseInt(req.headers["x-user-id"] as string);
@@ -155,6 +166,26 @@ export async function registerRoutes(httpServer: Server, app: Express) {
       }
       const biz = await storage.createBusiness({ ...req.body, userId: user.id, createdAt: new Date().toISOString() });
       res.json(biz);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
+  app.put("/api/businesses/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = parseInt(req.headers["x-user-id"] as string);
+      const user = userId ? await storage.getUser(userId) : null;
+      if (!user || user.membershipTier === "free") {
+        return res.status(403).json({ error: "A paid membership is required." });
+      }
+      // Ensure the listing belongs to this user (unless admin)
+      const existing = await storage.getBusinessByUserId(userId);
+      if (!existing || (existing.id !== id && user.role !== "admin")) {
+        return res.status(403).json({ error: "Not authorized to edit this listing." });
+      }
+      const updated = await storage.updateBusiness(id, req.body);
+      res.json(updated);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
