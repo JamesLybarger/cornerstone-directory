@@ -64,6 +64,15 @@ app.use((req, res, next) => {
 
 (async () => {
   registerStripeRoutes(app);
+
+  // Stripe redirect landing pages — send browser into hash router
+  app.get("/payment-success", (_req, res) => {
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payment Successful</title><script>window.location.replace("/#/dashboard?payment=success");<\/script></head><body></body></html>`);
+  });
+  app.get("/payment-cancelled", (_req, res) => {
+    res.send(`<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Payment Cancelled</title><script>window.location.replace("/#/register?payment=cancelled");<\/script></head><body></body></html>`);
+  });
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

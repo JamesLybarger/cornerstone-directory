@@ -46,8 +46,8 @@ export function registerStripeRoutes(app: Express) {
           tier,
           referralCode: referralCode || "",
         },
-        success_url: `${APP_URL}/#/dashboard?payment=success`,
-        cancel_url: `${APP_URL}/#/join?payment=cancelled`,
+        success_url: `${APP_URL}/payment-success`,
+        cancel_url: `${APP_URL}/payment-cancelled`,
         line_items: [
           {
             price_data:
