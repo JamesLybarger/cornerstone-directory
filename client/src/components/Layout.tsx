@@ -67,7 +67,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Link>
 
           {/* DESKTOP NAV */}
-          <nav className="hidden lg:flex items-center gap-1">
+          <nav className="hidden md:flex items-center gap-1">
             {navLinks.map(({ href, label }) => (
               <Link key={href} href={href}>
                 <span className={`px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
@@ -82,7 +82,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </nav>
 
           {/* RIGHT SIDE */}
-          <div className="hidden lg:flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-2">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -128,7 +128,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
           {/* MOBILE HAMBURGER */}
           <button
-            className="lg:hidden p-2 text-foreground"
+            className="md:hidden p-2 text-foreground"
             onClick={() => setMobileOpen(!mobileOpen)}
             data-testid="btn-mobile-menu"
           >
@@ -138,7 +138,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
         {/* MOBILE MENU */}
         {mobileOpen && (
-          <div className="lg:hidden border-t border-border bg-background px-4 py-4 flex flex-col gap-2">
+          <div className="md:hidden border-t border-border bg-background px-4 py-4 flex flex-col gap-2">
             {navLinks.map(({ href, label, icon: Icon }) => (
               <Link key={href} href={href} onClick={() => setMobileOpen(false)}>
                 <span className="flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted cursor-pointer">
