@@ -1,18 +1,24 @@
 import type { Express, Request, Response } from "express";
 import Stripe from "stripe";
 import crypto from "crypto";
-import path from "path";
-import fs from "fs";
 import { storage } from "./storage";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
 const PLATFORM_FEE_PERCENT = 0.06; // 6%
 const APP_URL = (process.env.APP_URL || "https://cornerstonedirectory.com").replace(/\/$/, "");
 
-// Upload directory for digital files (Railway ephemeral — files survive within a deploy session)
-// For production persistence, you'd use S3/R2. For now files are stored in /tmp
-const UPLOAD_DIR = "/tmp/marketplace-files";
-if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+// Cloudflare R2 (S3-compatible) - persistent file storage
+const r2 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
+  },
+});
+const R2_BUCKET = process.env.R2_BUCKET_NAME || "cornerstone-marketplace-files";
 
 function genToken() {
   return crypto.randomBytes(32).toString("hex");
@@ -406,13 +412,14 @@ export function registerMarketplaceRoutes(app: Express) {
         return res.status(404).json({ error: "File not found." });
       }
 
-      const filePath = path.join(UPLOAD_DIR, listing.fileKey);
-      if (!fs.existsSync(filePath)) {
-        return res.status(404).json({ error: "File not available. Contact the seller." });
-      }
-
+      // Generate a 1-hour signed URL from R2
+      const signedUrl = await getSignedUrl(
+        r2,
+        new GetObjectCommand({ Bucket: R2_BUCKET, Key: listing.fileKey }),
+        { expiresIn: 3600 }
+      );
       await storage.incrementDownloadCount(purchase.id);
-      res.download(filePath, listing.fileName || "download");
+      res.redirect(signedUrl);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
     }
@@ -425,23 +432,24 @@ export function registerMarketplaceRoutes(app: Express) {
     try {
       const userId = parseInt(req.headers["x-user-id"] as string);
       const user = userId ? await storage.getUser(userId) : null;
-      if (!user || user.membershipTier === "free") {
+      if (!user || (user.membershipTier === "free" && user.role !== "admin")) {
         return res.status(403).json({ error: "Paid membership required." });
       }
-
       const { fileName, fileData, mimeType } = req.body;
       if (!fileName || !fileData) return res.status(400).json({ error: "fileName and fileData required" });
 
-      // Max 50MB
       const buffer = Buffer.from(fileData, "base64");
       if (buffer.length > 50 * 1024 * 1024) {
         return res.status(413).json({ error: "File too large. Max 50MB." });
       }
-
-      const fileKey = `${Date.now()}-${userId}-${crypto.randomBytes(8).toString("hex")}`;
-      const filePath = path.join(UPLOAD_DIR, fileKey);
-      fs.writeFileSync(filePath, buffer);
-
+      const fileKey = `uploads/${Date.now()}-${userId}-${crypto.randomBytes(8).toString("hex")}`;
+      await r2.send(new PutObjectCommand({
+        Bucket: R2_BUCKET,
+        Key: fileKey,
+        Body: buffer,
+        ContentType: mimeType || "application/octet-stream",
+        ContentDisposition: `attachment; filename="${fileName}"`,
+      }));
       res.json({ fileKey, fileName, fileSize: buffer.length });
     } catch (e: any) {
       res.status(500).json({ error: e.message });
