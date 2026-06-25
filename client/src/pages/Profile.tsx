@@ -61,13 +61,14 @@ export default function Profile() {
       if (passwordForm.newPassword.length < 8) {
         throw new Error("New password must be at least 8 characters");
       }
-      // Verify current password by attempting login
+      // Verify current password by attempting login first
       const checkRes = await apiRequest("POST", "/api/auth/login", {
         email: user?.email,
         password: passwordForm.currentPassword,
       });
-      if (!checkRes.ok) throw new Error("Current password is incorrect");
+      if (!checkRes.ok) throw new Error("Current password is incorrect — please try again");
 
+      // Save new password
       const res = await apiRequest("PUT", `/api/users/${user?.id}`, {
         password: passwordForm.newPassword,
       });
@@ -75,18 +76,28 @@ export default function Profile() {
         const err = await res.json();
         throw new Error(err.error || "Failed to update password");
       }
+      // Verify the new password actually works before logging out
+      const verifyRes = await apiRequest("POST", "/api/auth/login", {
+        email: user?.email,
+        password: passwordForm.newPassword,
+      });
+      if (!verifyRes.ok) throw new Error("Password save failed — please try again");
       return res.json();
     },
     onSuccess: () => {
-      toast({ title: "Password updated", description: "Your new password is active. Please log in again." });
+      toast({
+        title: "Password updated ✅",
+        description: `You can now log in with your new password. Email: ${user?.email}`,
+        duration: 8000,
+      });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
       setTimeout(() => {
         logout();
         setLocation("/login");
-      }, 2000);
+      }, 4000);
     },
     onError: (err: any) => {
-      toast({ title: "Password change failed", description: err.message, variant: "destructive" });
+      toast({ title: "Password change failed", description: err.message, variant: "destructive", duration: 8000 });
     },
   });
 
