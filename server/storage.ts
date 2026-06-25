@@ -1,5 +1,7 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
+import { mkdirSync } from "fs";
+import { dirname } from "path";
 import { eq, desc, and } from "drizzle-orm";
 import {
   users, businesses, products, orders, posts, bookings, resources, referrals,
@@ -13,7 +15,11 @@ import {
   type Referral, type InsertReferral,
 } from "@shared/schema";
 
-const sqlite = new Database("data.db");
+// Use /data/data.db on Railway (persistent volume) or local data.db in dev
+const DB_PATH = process.env.NODE_ENV === "production" ? "/data/data.db" : "data.db";
+try { mkdirSync(dirname(DB_PATH), { recursive: true }); } catch {}
+const sqlite = new Database(DB_PATH);
+console.log(`[DB] Using database at: ${DB_PATH}`);
 const db = drizzle(sqlite);
 
 sqlite.exec(`
