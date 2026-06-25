@@ -30,10 +30,10 @@ export function registerStripeRoutes(app: Express) {
       const { userId, referralCode } = req.body;
       if (!userId) return res.status(400).json({ error: "userId required" });
 
-      const user = storage.getUser(parseInt(userId));
+      const user = await storage.getUser(parseInt(userId));
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      const paidCount = storage.getPaidMemberCount();
+      const paidCount = await storage.getPaidMemberCount();
       const isFounding = paidCount < FOUNDING_LIMIT;
       const tier = isFounding ? "founding" : "annual";
       const unitAmount = Math.round((isFounding ? FOUNDING_PRICE : ANNUAL_PRICE) * 100);
@@ -114,16 +114,16 @@ export function registerStripeRoutes(app: Express) {
         const { userId, tier, referralCode } = session.metadata || {};
         if (userId && tier) {
           const uid = parseInt(userId);
-          storage.updateUser(uid, {
+          await storage.updateUser(uid, {
             membershipTier: tier as "founding" | "annual",
             membershipPrice: tier === "founding" ? FOUNDING_PRICE : ANNUAL_PRICE,
             isActive: true,
           });
           if (referralCode) {
-            const referrer = storage.getUserByReferralCode(referralCode);
+            const referrer = await storage.getUserByReferralCode(referralCode);
             if (referrer) {
-              storage.addReferralCredit(referrer.id, REFERRAL_CREDIT);
-              storage.createReferral({
+              await storage.addReferralCredit(referrer.id, REFERRAL_CREDIT);
+              await storage.createReferral({
                 referrerId: referrer.id,
                 referredId: uid,
                 creditAmount: REFERRAL_CREDIT,

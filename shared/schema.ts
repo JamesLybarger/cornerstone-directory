@@ -1,10 +1,10 @@
-import { sqliteTable, text, integer, real } from "drizzle-orm/sqlite-core";
+import { pgTable, text, integer, real, boolean, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // USERS
-export const users = sqliteTable("users", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
   firstName: text("first_name").notNull(),
@@ -15,27 +15,27 @@ export const users = sqliteTable("users", {
   phone: text("phone"),
   bio: text("bio"),
   avatarUrl: text("avatar_url"),
-  role: text("role").notNull().default("member"), // 'member' | 'admin'
-  membershipTier: text("membership_tier").notNull().default("free"), // 'free' | 'founding' | 'annual'
+  role: text("role").notNull().default("member"),
+  membershipTier: text("membership_tier").notNull().default("free"),
   membershipPrice: real("membership_price"),
-  referralCode: text("referral_code").unique(),  // unique code for sharing
-  referredBy: integer("referred_by"),             // user id who referred this person
-  referralCredit: real("referral_credit").notNull().default(0), // accumulated $4.99 credits
+  referralCode: text("referral_code").unique(),
+  referredBy: integer("referred_by"),
+  referralCredit: real("referral_credit").notNull().default(0),
   joinedAt: text("joined_at").notNull().default(new Date().toISOString()),
-  isActive: integer("is_active", { mode: "boolean" }).notNull().default(true),
+  isActive: boolean("is_active").notNull().default(true),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({ id: true, joinedAt: true, isActive: true });
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-// REFERRALS — log every successful referral and the credit awarded
-export const referrals = sqliteTable("referrals", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  referrerId: integer("referrer_id").notNull(),   // member who shared the link
-  referredId: integer("referred_id").notNull(),   // new member who joined
+// REFERRALS
+export const referrals = pgTable("referrals", {
+  id: serial("id").primaryKey(),
+  referrerId: integer("referrer_id").notNull(),
+  referredId: integer("referred_id").notNull(),
   creditAmount: real("credit_amount").notNull().default(4.99),
-  appliedToRenewal: integer("applied_to_renewal", { mode: "boolean" }).default(false),
+  appliedToRenewal: boolean("applied_to_renewal").default(false),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
@@ -44,8 +44,8 @@ export type InsertReferral = z.infer<typeof insertReferralSchema>;
 export type Referral = typeof referrals.$inferSelect;
 
 // BUSINESS DIRECTORY
-export const businesses = sqliteTable("businesses", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const businesses = pgTable("businesses", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   businessName: text("business_name").notNull(),
   description: text("description").notNull(),
@@ -55,9 +55,9 @@ export const businesses = sqliteTable("businesses", {
   email: text("email"),
   city: text("city"),
   state: text("state").notNull(),
-  isNationwide: integer("is_nationwide", { mode: "boolean" }).default(false),
+  isNationwide: boolean("is_nationwide").default(false),
   logoUrl: text("logo_url"),
-  featured: integer("featured", { mode: "boolean" }).default(false),
+  featured: boolean("featured").default(false),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
@@ -65,17 +65,17 @@ export const insertBusinessSchema = createInsertSchema(businesses).omit({ id: tr
 export type InsertBusiness = z.infer<typeof insertBusinessSchema>;
 export type Business = typeof businesses.$inferSelect;
 
-// PRODUCTS / DIGITAL FILES
-export const products = sqliteTable("products", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+// PRODUCTS
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   price: real("price").notNull(),
   category: text("category").notNull(),
   imageUrl: text("image_url"),
   fileUrl: text("file_url"),
-  featured: integer("featured", { mode: "boolean" }).default(false),
-  isActive: integer("is_active", { mode: "boolean" }).default(true),
+  featured: boolean("featured").default(false),
+  isActive: boolean("is_active").default(true),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
@@ -84,8 +84,8 @@ export type InsertProduct = z.infer<typeof insertProductSchema>;
 export type Product = typeof products.$inferSelect;
 
 // ORDERS
-export const orders = sqliteTable("orders", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const orders = pgTable("orders", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   productId: integer("product_id").notNull(),
   amount: real("amount").notNull(),
@@ -98,8 +98,8 @@ export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type Order = typeof orders.$inferSelect;
 
 // BLOG POSTS
-export const posts = sqliteTable("posts", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const posts = pgTable("posts", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   slug: text("slug").notNull().unique(),
   excerpt: text("excerpt").notNull(),
@@ -107,8 +107,8 @@ export const posts = sqliteTable("posts", {
   category: text("category").notNull(),
   imageUrl: text("image_url"),
   authorId: integer("author_id").notNull(),
-  published: integer("published", { mode: "boolean" }).default(false),
-  featured: integer("featured", { mode: "boolean" }).default(false),
+  published: boolean("published").default(false),
+  featured: boolean("featured").default(false),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
 
@@ -117,8 +117,8 @@ export type InsertPost = z.infer<typeof insertPostSchema>;
 export type Post = typeof posts.$inferSelect;
 
 // BOOKINGS
-export const bookings = sqliteTable("bookings", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
   userId: integer("user_id").notNull(),
   sessionType: text("session_type").notNull(),
   date: text("date").notNull(),
@@ -133,13 +133,13 @@ export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 
 // RESOURCES
-export const resources = sqliteTable("resources", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
+export const resources = pgTable("resources", {
+  id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   type: text("type").notNull(),
   url: text("url"),
-  membersOnly: integer("members_only", { mode: "boolean" }).default(false),
+  membersOnly: boolean("members_only").default(false),
   imageUrl: text("image_url"),
   createdAt: text("created_at").notNull().default(new Date().toISOString()),
 });
