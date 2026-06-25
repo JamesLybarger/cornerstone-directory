@@ -91,27 +91,18 @@ export function registerStripeRoutes(app: Express) {
   });
 
   // ── WEBHOOK ───────────────────────────────────────────────────────────────
-  // Must use raw body — register BEFORE express.json()
-  app.post(
-    "/api/stripe/webhook",
-    (req, res, next) => {
-      let raw = "";
-      req.setEncoding("utf8");
-      req.on("data", (chunk: string) => { raw += chunk; });
-      req.on("end", () => {
-        (req as any).rawBody = raw;
-        next();
-      });
-    },
-    async (req, res) => {
+  // rawBody is captured by express.json() verify callback in server/index.ts
+  app.post("/api/stripe/webhook", async (req, res) => {
       const sig = req.headers["stripe-signature"] as string;
+      const rawBody = (req as any).rawBody; // Buffer captured by express.json verify
       let event: Stripe.Event;
 
       try {
-        if (WEBHOOK_SECRET && sig) {
-          event = stripe.webhooks.constructEvent((req as any).rawBody, sig, WEBHOOK_SECRET);
+        if (WEBHOOK_SECRET && sig && rawBody) {
+          event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
         } else {
-          event = JSON.parse((req as any).rawBody) as Stripe.Event;
+          // Fallback: use already-parsed body (no signature verification)
+          event = req.body as Stripe.Event;
         }
       } catch (e: any) {
         console.error("Webhook sig error:", e.message);
