@@ -261,4 +261,25 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   };
   app.get("/api/resources/:userId", handleResources);
   app.get("/api/resources", handleResources);
+
+  // TEMP ADMIN — wipe all purchases (admin only, remove after use)
+  app.delete("/api/admin/wipe-purchases", async (req, res) => {
+    try {
+      const userId = parseInt(req.headers["x-user-id"] as string);
+      const user = userId ? await storage.getUser(userId) : null;
+      if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
+      const all = await storage.getPurchasesByBuyer(0);
+      // Delete all purchases by resetting sales counts too
+      const { drizzle } = await import("drizzle-orm/node-postgres");
+      const { Pool } = await import("pg");
+      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+      const db2 = drizzle(pool);
+      await pool.query("DELETE FROM purchases");
+      await pool.query("UPDATE listings SET sales_count = 0");
+      await pool.end();
+      res.json({ ok: true, message: "All purchases wiped and sales counts reset" });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
 }
