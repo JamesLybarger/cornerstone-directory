@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useSearch, Link } from "wouter";
+import { Link } from "wouter";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -7,8 +7,9 @@ import { CheckCircle, Download, Loader2, AlertCircle } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 export default function MarketplaceSuccess() {
-  const search = useSearch();
-  const params = new URLSearchParams(search);
+  // Read params from window.location.search (before the hash) since Stripe
+  // redirects with query string before the hash fragment
+  const params = new URLSearchParams(window.location.search);
   const sessionId = params.get("session_id");
   const listingId = params.get("listing_id");
   const { user } = useAuth();

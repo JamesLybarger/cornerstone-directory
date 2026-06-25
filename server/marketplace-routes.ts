@@ -274,7 +274,7 @@ export function registerMarketplaceRoutes(app: Express) {
           },
           quantity: 1,
         }],
-        success_url: `${APP_URL}/#/marketplace/success?session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}`,
+        success_url: `${APP_URL}/?session_id={CHECKOUT_SESSION_ID}&listing_id=${listing.id}#/marketplace/success`,
         cancel_url: `${APP_URL}/#/marketplace`,
         metadata: {
           listingId: String(listing.id),
