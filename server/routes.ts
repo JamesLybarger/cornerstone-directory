@@ -11,7 +11,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   // AUTH — REGISTER
   app.post("/api/auth/register", async (req, res) => {
     try {
-      const { email, password, firstName, lastName, businessName, state, city, referralCode } = req.body;
+      const { password, firstName, lastName, businessName, state, city, referralCode } = req.body;
+      const email = req.body.email?.toLowerCase().trim();
       if (!email || !password || !firstName || !lastName) {
         return res.status(400).json({ error: "Required fields missing" });
       }
@@ -59,7 +60,8 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   app.post("/api/auth/login", async (req, res) => {
     try {
       const { email, password } = req.body;
-      const user = await storage.getUserByEmail(email);
+      // Case-insensitive email lookup
+      const user = await storage.getUserByEmail(email.toLowerCase().trim());
       if (!user || user.password !== password) {
         return res.status(401).json({ error: "Invalid email or password" });
       }

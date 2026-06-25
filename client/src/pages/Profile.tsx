@@ -61,33 +61,32 @@ export default function Profile() {
       if (passwordForm.newPassword.length < 8) {
         throw new Error("New password must be at least 8 characters");
       }
-      // Verify current password by attempting login first
+
+      // Step 1: verify current password
       const checkRes = await apiRequest("POST", "/api/auth/login", {
         email: user?.email,
         password: passwordForm.currentPassword,
       });
-      if (!checkRes.ok) throw new Error("Current password is incorrect — please try again");
-
-      // Save new password
-      const res = await apiRequest("PUT", `/api/users/${user?.id}`, {
-        password: passwordForm.newPassword,
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to update password");
+      const checkData = await checkRes.json();
+      if (!checkRes.ok || checkData.error) {
+        throw new Error("Current password is incorrect — please try again");
       }
-      // Verify the new password actually works before logging out
-      const verifyRes = await apiRequest("POST", "/api/auth/login", {
-        email: user?.email,
+
+      // Step 2: save new password
+      const saveRes = await apiRequest("PUT", `/api/users/${user?.id}`, {
         password: passwordForm.newPassword,
       });
-      if (!verifyRes.ok) throw new Error("Password save failed — please try again");
-      return res.json();
+      const saveData = await saveRes.json();
+      if (!saveRes.ok || saveData.error) {
+        throw new Error(saveData.error || "Failed to save new password");
+      }
+
+      return { email: user?.email };
     },
-    onSuccess: () => {
+    onSuccess: ({ email }) => {
       toast({
         title: "Password updated ✅",
-        description: `You can now log in with your new password. Email: ${user?.email}`,
+        description: `Log back in with: ${email}`,
         duration: 8000,
       });
       setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
