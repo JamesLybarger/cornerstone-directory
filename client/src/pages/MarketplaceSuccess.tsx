@@ -4,6 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, Loader2, AlertCircle } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function MarketplaceSuccess() {
   const search = useSearch();
@@ -13,31 +14,35 @@ export default function MarketplaceSuccess() {
   const { user } = useAuth();
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [errorMsg, setErrorMsg] = useState("");
   const [downloadToken, setDownloadToken] = useState<string | null>(null);
   const [listingTitle, setListingTitle] = useState("");
 
   useEffect(() => {
-    if (!sessionId || !listingId) { setStatus("error"); return; }
+    if (!sessionId || !listingId) { setStatus("error"); setErrorMsg("Missing session or listing information."); return; }
 
     const verify = async () => {
       try {
-        const res = await fetch("/api/marketplace/verify-purchase", {
+        const data = await apiRequest("/api/marketplace/verify-purchase", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ sessionId, listingId, buyerId: user?.id }),
         });
-        const data = await res.json();
         if (data.token) {
           setDownloadToken(data.token);
           // Fetch listing title
-          const lr = await fetch(`/api/marketplace/listings/${listingId}`);
-          const listing = await lr.json();
-          setListingTitle(listing.title || "your product");
+          try {
+            const listing = await apiRequest(`/api/marketplace/listings/${listingId}`);
+            setListingTitle(listing.title || "your product");
+          } catch {
+            setListingTitle("your product");
+          }
           setStatus("ready");
         } else {
+          setErrorMsg(data.error || "Purchase verification failed.");
           setStatus("error");
         }
-      } catch {
+      } catch (e: any) {
+        setErrorMsg(e?.message || "Could not confirm purchase.");
         setStatus("error");
       }
     };
@@ -102,9 +107,14 @@ export default function MarketplaceSuccess() {
           <div>
             <AlertCircle className="w-12 h-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-black mb-2">Something went wrong</h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              We couldn't confirm your purchase. If you were charged, please contact us at contact@cornerstonedirectory.com with your order details.
+            <p className="text-sm text-muted-foreground mb-4">
+              We couldn't confirm your purchase. If you were charged, please contact us at{" "}
+              <a href="mailto:contact@cornerstonedirectory.com" className="underline">contact@cornerstonedirectory.com</a>{" "}
+              with your order details.
             </p>
+            {errorMsg && (
+              <p className="text-xs text-destructive/80 bg-destructive/10 rounded p-3 mb-6 font-mono">{errorMsg}</p>
+            )}
             <Link href="/marketplace">
               <Button variant="outline">Back to Marketplace</Button>
             </Link>

@@ -358,6 +358,7 @@ export interface IStorage {
   // Purchases
   createPurchase(purchase: InsertPurchase): Promise<Purchase>;
   getPurchaseByToken(token: string): Promise<Purchase | undefined>;
+  getPurchaseByPaymentIntent(paymentIntentId: string): Promise<Purchase | undefined>;
   getPurchasesByBuyer(buyerId: number): Promise<Purchase[]>;
   getPurchasesBySeller(sellerId: number): Promise<Purchase[]>;
   updatePurchaseStatus(id: number, status: string): Promise<void>;
@@ -505,6 +506,9 @@ export const storage: IStorage = {
   },
   async getPurchaseByToken(token) {
     return (await db.select().from(purchases).where(eq(purchases.downloadToken, token)))[0];
+  },
+  async getPurchaseByPaymentIntent(paymentIntentId) {
+    return (await db.select().from(purchases).where(eq(purchases.stripePaymentIntentId, paymentIntentId)))[0];
   },
   async getPurchasesByBuyer(buyerId) {
     return db.select().from(purchases).where(eq(purchases.buyerId, buyerId)).orderBy(desc(purchases.createdAt));

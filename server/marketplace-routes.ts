@@ -347,55 +347,78 @@ export function registerMarketplaceRoutes(app: Express) {
   // ─── DOWNLOAD ─────────────────────────────────────────────────────────────
 
   // Verify purchase and get download token after Stripe success
+  // This is idempotent — safe to call multiple times for the same session
   app.post("/api/marketplace/verify-purchase", async (req, res) => {
     try {
       const { sessionId, listingId, buyerId } = req.body;
 
-      // Find purchase by stripe session (look up via payment intent)
+      if (!sessionId) return res.status(400).json({ error: "sessionId required" });
+
+      // Retrieve the Stripe session to confirm payment and get the payment intent
       const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+      if (session.payment_status !== "paid") {
+        return res.status(402).json({ error: "Payment not completed" });
+      }
+
       const paymentIntentId = session.payment_intent as string;
 
-      // Poll purchases for this payment intent (give webhook a moment)
-      let purchase = null;
-      for (let i = 0; i < 5; i++) {
-        const allPurchases = await storage.getPurchasesByBuyer(buyerId || 0);
-        purchase = allPurchases.find(p => p.stripePaymentIntentId === paymentIntentId || p.listingId === parseInt(listingId));
-        if (purchase) break;
-
-        // If buyer not logged in, check by listing+session
-        if (!purchase && listingId) {
-          const sellerPurchases = await storage.getPurchasesBySeller(0);
-          // fallback — create purchase record now if webhook hasn't fired
-        }
-        await new Promise(r => setTimeout(r, 1000));
-      }
-
-      if (!purchase) {
-        // Webhook may not have fired yet — create the purchase record now
-        const listing = await storage.getListing(parseInt(listingId));
-        if (listing && session.payment_status === "paid") {
-          const amount = (session.amount_total || 0) / 100;
-          const platformFee = parseFloat((amount * PLATFORM_FEE_PERCENT).toFixed(2));
-          const sellerAmount = parseFloat((amount - platformFee).toFixed(2));
-          const token = genToken();
-          purchase = await storage.createPurchase({
-            buyerId: buyerId ? parseInt(buyerId) : 0,
-            listingId: parseInt(listingId),
-            sellerId: listing.sellerId,
-            amount,
-            platformFee,
-            sellerAmount,
-            stripePaymentIntentId: paymentIntentId,
-            downloadToken: token,
-            status: "completed",
-          });
-          await storage.incrementListingSales(parseInt(listingId));
+      // STEP 1: Check if purchase already exists for this payment intent (idempotent)
+      if (paymentIntentId) {
+        const existing = await storage.getPurchaseByPaymentIntent(paymentIntentId);
+        if (existing) {
+          return res.json({ token: existing.downloadToken, listingId: existing.listingId });
         }
       }
 
-      if (!purchase) return res.status(404).json({ error: "Purchase not found" });
+      // STEP 2: Also check by buyerId + listingId in case payment intent wasn't stored
+      const parsedBuyerId = buyerId ? parseInt(buyerId) : 0;
+      const parsedListingId = listingId ? parseInt(listingId) : parseInt(session.metadata?.listingId || "0");
+
+      if (parsedBuyerId && parsedListingId) {
+        const buyerPurchases = await storage.getPurchasesByBuyer(parsedBuyerId);
+        const match = buyerPurchases.find(p => p.listingId === parsedListingId);
+        if (match) {
+          return res.json({ token: match.downloadToken, listingId: match.listingId });
+        }
+      }
+
+      // STEP 3: Webhook hasn't fired yet — create the purchase record now as fallback
+      // Use metadata from session as source of truth
+      const meta = session.metadata || {};
+      const resolvedListingId = parsedListingId || parseInt(meta.listingId || "0");
+      const resolvedBuyerId = parsedBuyerId || parseInt(meta.buyerId || "0");
+      const resolvedSellerId = parseInt(meta.sellerId || "0");
+
+      if (!resolvedListingId) {
+        return res.status(404).json({ error: "Could not determine listing from session" });
+      }
+
+      const listing = await storage.getListing(resolvedListingId);
+      if (!listing) return res.status(404).json({ error: "Listing not found" });
+
+      const amount = (session.amount_total || 0) / 100;
+      const platformFee = parseFloat((amount * PLATFORM_FEE_PERCENT).toFixed(2));
+      const sellerAmount = parseFloat((amount - platformFee).toFixed(2));
+      const token = genToken();
+
+      const purchase = await storage.createPurchase({
+        buyerId: resolvedBuyerId,
+        listingId: resolvedListingId,
+        sellerId: resolvedSellerId || listing.sellerId,
+        amount,
+        platformFee,
+        sellerAmount,
+        stripePaymentIntentId: paymentIntentId || null,
+        downloadToken: token,
+        status: "completed",
+      });
+
+      await storage.incrementListingSales(resolvedListingId);
+
       res.json({ token: purchase.downloadToken, listingId: purchase.listingId });
     } catch (e: any) {
+      console.error("[verify-purchase] Error:", e.message, e.stack);
       res.status(500).json({ error: e.message });
     }
   });
