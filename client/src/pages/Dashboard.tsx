@@ -29,6 +29,21 @@ export default function Dashboard() {
     enabled: !!user && user.membershipTier !== "free",
   });
 
+  const { data: myBusiness } = useQuery({
+    queryKey: ["/api/businesses/my", user?.id],
+    queryFn: async () => {
+      try {
+        const res = await fetch(`/api/businesses/my/${user?.id}`);
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
+    },
+    enabled: !!user && user?.membershipTier !== "free",
+    retry: false,
+  });
+
   if (!user) return (
     <div className="min-h-[80vh] flex items-center justify-center px-4 text-center">
       <div>
@@ -55,21 +70,6 @@ export default function Dashboard() {
   };
 
   const isPaid = user.membershipTier !== "free";
-
-  const { data: myBusiness } = useQuery({
-    queryKey: ["/api/businesses/my", user?.id],
-    queryFn: async () => {
-      try {
-        const res = await fetch(`/api/businesses/my/${user?.id}`);
-        if (!res.ok) return null;
-        return res.json();
-      } catch {
-        return null;
-      }
-    },
-    enabled: !!user && isPaid,
-    retry: false,
-  });
 
   // Build referral link using current origin
   const referralLink = user.referralCode
