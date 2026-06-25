@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, User, Building2, Lock, Save } from "lucide-react";
+import { ArrowLeft, User, Building2, Lock, Save, Eye, EyeOff } from "lucide-react";
 
 export default function Profile() {
   const { user, logout } = useAuth();
@@ -32,6 +32,11 @@ export default function Profile() {
     currentPassword: "",
     newPassword: "",
     confirmPassword: "",
+  });
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false,
   });
 
   const profileMutation = useMutation({
@@ -262,36 +267,57 @@ export default function Profile() {
           <CardContent className="space-y-4">
             <div className="space-y-1.5">
               <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                data-testid="input-currentPassword"
-                value={passwordForm.currentPassword}
-                onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
-              />
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showPasswords.current ? "text" : "password"}
+                  data-testid="input-currentPassword"
+                  value={passwordForm.currentPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, currentPassword: e.target.value }))}
+                  className="pr-10"
+                />
+                <button type="button" onClick={() => setShowPasswords(s => ({ ...s, current: !s.current }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPasswords.current ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="newPassword">New Password</Label>
-              <Input
-                id="newPassword"
-                type="password"
-                data-testid="input-newPassword"
-                value={passwordForm.newPassword}
-                onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
-                placeholder="Minimum 8 characters"
-              />
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPasswords.new ? "text" : "password"}
+                  data-testid="input-newPassword"
+                  value={passwordForm.newPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, newPassword: e.target.value }))}
+                  placeholder="Minimum 8 characters"
+                  className="pr-10"
+                />
+                <button type="button" onClick={() => setShowPasswords(s => ({ ...s, new: !s.new }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPasswords.new ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <div className="space-y-1.5">
               <Label htmlFor="confirmPassword">Confirm New Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                data-testid="input-confirmPassword"
-                value={passwordForm.confirmPassword}
-                onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showPasswords.confirm ? "text" : "password"}
+                  data-testid="input-confirmPassword"
+                  value={passwordForm.confirmPassword}
+                  onChange={e => setPasswordForm(f => ({ ...f, confirmPassword: e.target.value }))}
+                  className="pr-10"
+                />
+                <button type="button" onClick={() => setShowPasswords(s => ({ ...s, confirm: !s.confirm }))}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPasswords.confirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
             <Button

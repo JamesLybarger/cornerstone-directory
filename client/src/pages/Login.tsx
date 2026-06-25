@@ -6,13 +6,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "../contexts/AuthContext";
-import { LogIn } from "lucide-react";
+import { LogIn, Eye, EyeOff } from "lucide-react";
+import { useState } from "react";
 
 export default function Login() {
   const { register, handleSubmit } = useForm();
   const { login, isLoading } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const [showPassword, setShowPassword] = useState(false);
 
   const onSubmit = async (data: any) => {
     try {
@@ -43,7 +45,13 @@ export default function Login() {
               </div>
               <div>
                 <Label>Password *</Label>
-                <Input {...register("password", { required: true })} type="password" placeholder="••••••••" data-testid="input-login-password" />
+                <div className="relative">
+                  <Input {...register("password", { required: true })} type={showPassword ? "text" : "password"} placeholder="••••••••" data-testid="input-login-password" className="pr-10" />
+                  <button type="button" onClick={() => setShowPassword(s => !s)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               </div>
               <Button type="submit" className="w-full crimson-gradient text-[hsl(38,20%,96%)] font-black shine-btn" disabled={isLoading} data-testid="btn-submit-login">
                 {isLoading ? "Signing in..." : "Sign In"}
