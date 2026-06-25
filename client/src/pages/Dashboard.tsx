@@ -59,9 +59,13 @@ export default function Dashboard() {
   const { data: myBusiness } = useQuery({
     queryKey: ["/api/businesses/my", user?.id],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/businesses/my/${user?.id}`);
-      if (res.status === 404) return null;
-      return res.json();
+      try {
+        const res = await fetch(`/api/businesses/my/${user?.id}`);
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
     },
     enabled: !!user && isPaid,
     retry: false,

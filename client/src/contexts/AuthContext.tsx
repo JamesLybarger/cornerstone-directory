@@ -12,8 +12,14 @@ interface AuthUser {
   membershipPrice?: number;
   state?: string;
   city?: string;
+  phone?: string;
   bio?: string;
   avatarUrl?: string;
+  referralCode?: string;
+  referralCredit?: number;
+  referredBy?: number | null;
+  isActive?: boolean;
+  joinedAt?: string;
 }
 
 interface AuthContextType {

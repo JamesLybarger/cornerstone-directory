@@ -63,10 +63,13 @@ export default function ListBusiness() {
   const { data: existingBusiness, isLoading: loadingBusiness } = useQuery({
     queryKey: ["/api/businesses/my", user?.id],
     queryFn: async () => {
-      const res = await apiRequest("GET", `/api/businesses/my/${user?.id}`);
-      if (res.status === 404) return null;
-      const data = await res.json();
-      return data ?? null;
+      try {
+        const res = await fetch(`/api/businesses/my/${user?.id}`);
+        if (!res.ok) return null;
+        return res.json();
+      } catch {
+        return null;
+      }
     },
     enabled: !!user && user.membershipTier !== "free",
     retry: false,
