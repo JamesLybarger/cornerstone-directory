@@ -38,7 +38,12 @@ export default function Register() {
   const checkoutMutation = useMutation({
     mutationFn: async ({ userId, referralCode }: { userId: number; referralCode: string }) => {
       const res = await apiRequest("POST", "/api/stripe/create-checkout", { userId, referralCode });
-      return res.json();
+      const data = await res.json();
+      // Surface server error messages properly
+      if (!res.ok || data.error) {
+        throw new Error(data.error || `Server error ${res.status}`);
+      }
+      return data;
     },
     onSuccess: (data) => {
       if (data.url) {
@@ -58,7 +63,12 @@ export default function Register() {
       }
     },
     onError: (err: any) => {
-      toast({ title: "Checkout failed", description: err.message, variant: "destructive" });
+      toast({
+        title: "Checkout failed",
+        description: err.message,
+        variant: "destructive",
+        duration: 10000,
+      });
       setStep("form");
     },
   });

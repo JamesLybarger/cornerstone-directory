@@ -8,7 +8,16 @@ const ANNUAL_PRICE = 59.99;
 const FOUNDING_LIMIT = 500;
 
 export function registerStripeRoutes(app: Express) {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || "", {
+  const secretKey = process.env.STRIPE_SECRET_KEY || "";
+  // Startup key check — visible in Railway deploy logs
+  if (!secretKey) {
+    console.error("[Stripe] ⚠️  STRIPE_SECRET_KEY is not set!");
+  } else if (!secretKey.startsWith("sk_live_") && !secretKey.startsWith("sk_test_")) {
+    console.error(`[Stripe] ⚠️  STRIPE_SECRET_KEY looks wrong — starts with: ${secretKey.substring(0, 12)}...`);
+  } else {
+    console.log(`[Stripe] ✅ Key loaded — ${secretKey.startsWith("sk_live_") ? "LIVE" : "TEST"} mode, length: ${secretKey.length}`);
+  }
+  const stripe = new Stripe(secretKey, {
     apiVersion: "2024-06-20",
   });
 
