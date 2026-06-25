@@ -3,6 +3,7 @@ import { Pool } from "pg";
 import { eq, desc, and } from "drizzle-orm";
 import {
   users, businesses, products, orders, posts, bookings, resources, referrals,
+  listings, purchases, sellerProfiles,
   type User, type InsertUser,
   type Business, type InsertBusiness,
   type Product, type InsertProduct,
@@ -11,6 +12,9 @@ import {
   type Booking, type InsertBooking,
   type Resource, type InsertResource,
   type Referral, type InsertReferral,
+  type Listing, type InsertListing,
+  type Purchase, type InsertPurchase,
+  type SellerProfile, type InsertSellerProfile,
 } from "@shared/schema";
 
 const pool = new Pool({
@@ -127,6 +131,47 @@ async function initDb() {
       url TEXT,
       members_only BOOLEAN DEFAULT FALSE,
       image_url TEXT,
+      created_at TEXT NOT NULL DEFAULT NOW()::TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS listings (
+      id SERIAL PRIMARY KEY,
+      seller_id INTEGER NOT NULL,
+      title TEXT NOT NULL,
+      description TEXT NOT NULL,
+      price REAL NOT NULL,
+      category TEXT NOT NULL,
+      image_url TEXT,
+      file_name TEXT,
+      file_key TEXT,
+      file_size INTEGER,
+      approved BOOLEAN DEFAULT FALSE,
+      active BOOLEAN DEFAULT TRUE,
+      sales_count INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL DEFAULT NOW()::TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS purchases (
+      id SERIAL PRIMARY KEY,
+      buyer_id INTEGER NOT NULL,
+      listing_id INTEGER NOT NULL,
+      seller_id INTEGER NOT NULL,
+      amount REAL NOT NULL,
+      platform_fee REAL NOT NULL,
+      seller_amount REAL NOT NULL,
+      stripe_payment_intent_id TEXT,
+      download_token TEXT UNIQUE,
+      download_count INTEGER NOT NULL DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at TEXT NOT NULL DEFAULT NOW()::TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS seller_profiles (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER NOT NULL UNIQUE,
+      stripe_account_id TEXT,
+      onboarding_complete BOOLEAN DEFAULT FALSE,
+      payouts_enabled BOOLEAN DEFAULT FALSE,
       created_at TEXT NOT NULL DEFAULT NOW()::TEXT
     );
   `);
@@ -301,6 +346,27 @@ export interface IStorage {
   getBookingsByUser(userId: number): Promise<Booking[]>;
   getPublicResources(): Promise<Resource[]>;
   getMemberResources(): Promise<Resource[]>;
+  // Marketplace listings
+  createListing(listing: InsertListing): Promise<Listing>;
+  getListing(id: number): Promise<Listing | undefined>;
+  getApprovedListings(): Promise<Listing[]>;
+  getListingsBySeller(sellerId: number): Promise<Listing[]>;
+  getAllListings(): Promise<Listing[]>;
+  updateListing(id: number, updates: Partial<InsertListing>): Promise<Listing | undefined>;
+  deleteListing(id: number): Promise<void>;
+  incrementListingSales(id: number): Promise<void>;
+  // Purchases
+  createPurchase(purchase: InsertPurchase): Promise<Purchase>;
+  getPurchaseByToken(token: string): Promise<Purchase | undefined>;
+  getPurchasesByBuyer(buyerId: number): Promise<Purchase[]>;
+  getPurchasesBySeller(sellerId: number): Promise<Purchase[]>;
+  updatePurchaseStatus(id: number, status: string): Promise<void>;
+  incrementDownloadCount(id: number): Promise<void>;
+  hasBuyerPurchased(buyerId: number, listingId: number): Promise<boolean>;
+  // Seller profiles
+  getSellerProfile(userId: number): Promise<SellerProfile | undefined>;
+  createSellerProfile(profile: InsertSellerProfile): Promise<SellerProfile>;
+  updateSellerProfile(userId: number, updates: Partial<InsertSellerProfile>): Promise<SellerProfile | undefined>;
 }
 
 export const storage: IStorage = {
@@ -403,5 +469,70 @@ export const storage: IStorage = {
   },
   async getMemberResources() {
     return db.select().from(resources);
+  },
+  // Marketplace listings
+  async createListing(listing) {
+    const [created] = await db.insert(listings).values(listing).returning();
+    return created;
+  },
+  async getListing(id) {
+    return (await db.select().from(listings).where(eq(listings.id, id)))[0];
+  },
+  async getApprovedListings() {
+    return db.select().from(listings).where(and(eq(listings.approved, true), eq(listings.active, true))).orderBy(desc(listings.createdAt));
+  },
+  async getListingsBySeller(sellerId) {
+    return db.select().from(listings).where(eq(listings.sellerId, sellerId)).orderBy(desc(listings.createdAt));
+  },
+  async getAllListings() {
+    return db.select().from(listings).orderBy(desc(listings.createdAt));
+  },
+  async updateListing(id, updates) {
+    const [updated] = await db.update(listings).set(updates).where(eq(listings.id, id)).returning();
+    return updated;
+  },
+  async deleteListing(id) {
+    await db.delete(listings).where(eq(listings.id, id));
+  },
+  async incrementListingSales(id) {
+    const listing = (await db.select().from(listings).where(eq(listings.id, id)))[0];
+    if (listing) await db.update(listings).set({ salesCount: (listing.salesCount || 0) + 1 }).where(eq(listings.id, id));
+  },
+  // Purchases
+  async createPurchase(purchase) {
+    const [created] = await db.insert(purchases).values(purchase).returning();
+    return created;
+  },
+  async getPurchaseByToken(token) {
+    return (await db.select().from(purchases).where(eq(purchases.downloadToken, token)))[0];
+  },
+  async getPurchasesByBuyer(buyerId) {
+    return db.select().from(purchases).where(eq(purchases.buyerId, buyerId)).orderBy(desc(purchases.createdAt));
+  },
+  async getPurchasesBySeller(sellerId) {
+    return db.select().from(purchases).where(eq(purchases.sellerId, sellerId)).orderBy(desc(purchases.createdAt));
+  },
+  async updatePurchaseStatus(id, status) {
+    await db.update(purchases).set({ status }).where(eq(purchases.id, id));
+  },
+  async incrementDownloadCount(id) {
+    const p = (await db.select().from(purchases).where(eq(purchases.id, id)))[0];
+    if (p) await db.update(purchases).set({ downloadCount: (p.downloadCount || 0) + 1 }).where(eq(purchases.id, id));
+  },
+  async hasBuyerPurchased(buyerId, listingId) {
+    const p = await db.select().from(purchases).where(and(eq(purchases.buyerId, buyerId), eq(purchases.listingId, listingId), eq(purchases.status, "completed")));
+    return p.length > 0;
+  },
+  // Seller profiles
+  async getSellerProfile(userId) {
+    return (await db.select().from(sellerProfiles).where(eq(sellerProfiles.userId, userId)))[0];
+  },
+  async createSellerProfile(profile) {
+    const [created] = await db.insert(sellerProfiles).values(profile).returning();
+    return created;
+  },
+  async updateSellerProfile(userId, updates) {
+    const [updated] = await db.update(sellerProfiles).set(updates).where(eq(sellerProfiles.userId, userId)).returning();
+    return updated;
   },
 };

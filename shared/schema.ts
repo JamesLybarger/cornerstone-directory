@@ -65,6 +65,62 @@ export const insertBusinessSchema = createInsertSchema(businesses).omit({ id: tr
 export type InsertBusiness = z.infer<typeof insertBusinessSchema>;
 export type Business = typeof businesses.$inferSelect;
 
+// MARKETPLACE LISTINGS (member-created digital products)
+export const listings = pgTable("listings", {
+  id: serial("id").primaryKey(),
+  sellerId: integer("seller_id").notNull(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  price: real("price").notNull(),
+  category: text("category").notNull(),
+  imageUrl: text("image_url"),
+  fileName: text("file_name"),       // original filename shown to buyer
+  fileKey: text("file_key"),         // server-side storage key for download
+  fileSize: integer("file_size"),    // bytes
+  approved: boolean("approved").default(false),
+  active: boolean("active").default(true),
+  salesCount: integer("sales_count").notNull().default(0),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertListingSchema = createInsertSchema(listings).omit({ id: true, createdAt: true, salesCount: true });
+export type InsertListing = z.infer<typeof insertListingSchema>;
+export type Listing = typeof listings.$inferSelect;
+
+// MARKETPLACE PURCHASES
+export const purchases = pgTable("purchases", {
+  id: serial("id").primaryKey(),
+  buyerId: integer("buyer_id").notNull(),
+  listingId: integer("listing_id").notNull(),
+  sellerId: integer("seller_id").notNull(),
+  amount: real("amount").notNull(),          // full price paid
+  platformFee: real("platform_fee").notNull(), // 6%
+  sellerAmount: real("seller_amount").notNull(), // 94%
+  stripePaymentIntentId: text("stripe_payment_intent_id"),
+  downloadToken: text("download_token").unique(), // secure one-time-ish token
+  downloadCount: integer("download_count").notNull().default(0),
+  status: text("status").notNull().default("pending"), // pending | completed | refunded
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertPurchaseSchema = createInsertSchema(purchases).omit({ id: true, createdAt: true, downloadCount: true });
+export type InsertPurchase = z.infer<typeof insertPurchaseSchema>;
+export type Purchase = typeof purchases.$inferSelect;
+
+// SELLER PROFILES (Stripe Connect)
+export const sellerProfiles = pgTable("seller_profiles", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().unique(),
+  stripeAccountId: text("stripe_account_id"),  // Stripe Connect account id
+  onboardingComplete: boolean("onboarding_complete").default(false),
+  payoutsEnabled: boolean("payouts_enabled").default(false),
+  createdAt: text("created_at").notNull().default(new Date().toISOString()),
+});
+
+export const insertSellerProfileSchema = createInsertSchema(sellerProfiles).omit({ id: true, createdAt: true });
+export type InsertSellerProfile = z.infer<typeof insertSellerProfileSchema>;
+export type SellerProfile = typeof sellerProfiles.$inferSelect;
+
 // PRODUCTS
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),

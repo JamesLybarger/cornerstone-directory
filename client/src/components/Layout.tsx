@@ -3,7 +3,7 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
-  Menu, X, BookOpen, ShoppingBag, Users,
+  Menu, X, BookOpen, ShoppingBag, Users, Store,
   Library, LayoutDashboard, LogIn, LogOut, UserPlus, ChevronDown, UserCog
 } from "lucide-react";
 import {
@@ -13,6 +13,7 @@ import {
 const navLinks = [
   { href: "/blog", label: "Blog", icon: BookOpen },
   { href: "/store", label: "Store", icon: ShoppingBag },
+  { href: "/marketplace", label: "Marketplace", icon: Store },
   { href: "/directory", label: "Directory", icon: Users },
   { href: "/resources", label: "Resources", icon: Library },
 ];

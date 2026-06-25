@@ -3,6 +3,7 @@ import express, { Response, NextFunction } from 'express';
 import type { Request } from 'express';
 import { registerRoutes } from "./routes";
 import { registerStripeRoutes } from "./stripe-routes";
+import { registerMarketplaceRoutes } from "./marketplace-routes";
 import { serveStatic } from "./static";
 import { createServer } from "node:http";
 
@@ -74,6 +75,7 @@ app.use((req, res, next) => {
   });
 
   await registerRoutes(httpServer, app);
+  registerMarketplaceRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {
     const status = err.status || err.statusCode || 500;
