@@ -4,7 +4,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import {
   Menu, X, BookOpen, ShoppingBag, Users,
-  Library, LayoutDashboard, LogIn, LogOut, UserPlus, ChevronDown
+  Library, LayoutDashboard, LogIn, LogOut, UserPlus, ChevronDown, UserCog
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -99,6 +99,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                       <LayoutDashboard className="w-4 h-4" /> My Dashboard
                     </Link>
                   </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link href="/profile" className="flex items-center gap-2 cursor-pointer">
+                      <UserCog className="w-4 h-4" /> Edit Profile
+                    </Link>
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={logout} className="text-destructive gap-2 cursor-pointer">
                     <LogOut className="w-4 h-4" /> Sign Out
                   </DropdownMenuItem>
@@ -147,6 +152,11 @@ export default function Layout({ children }: { children: ReactNode }) {
                   <Link href="/dashboard" onClick={() => setMobileOpen(false)}>
                     <span className="flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted cursor-pointer">
                       <LayoutDashboard className="w-4 h-4 text-primary" /> Dashboard
+                    </span>
+                  </Link>
+                  <Link href="/profile" onClick={() => setMobileOpen(false)}>
+                    <span className="flex items-center gap-2.5 px-3 py-2.5 text-sm font-medium rounded-lg hover:bg-muted cursor-pointer">
+                      <UserCog className="w-4 h-4 text-primary" /> Edit Profile
                     </span>
                   </Link>
                   <button onClick={() => { logout(); setMobileOpen(false); }} className="flex items-center gap-2.5 px-3 py-2.5 text-sm text-destructive rounded-lg hover:bg-muted w-full text-left">

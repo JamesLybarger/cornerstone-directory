@@ -14,6 +14,7 @@ import Resources from "./pages/Resources";
 import Dashboard from "./pages/Dashboard";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/not-found";
 
 export default function App() {
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/directory" component={Directory} />
               <Route path="/resources" component={Resources} />
               <Route path="/dashboard" component={Dashboard} />
+              <Route path="/profile" component={Profile} />
               <Route path="/login" component={Login} />
               <Route path="/register" component={Register} />
               <Route component={NotFound} />
