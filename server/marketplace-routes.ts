@@ -304,7 +304,7 @@ export function registerMarketplaceRoutes(app: Express) {
     const sig = req.headers["stripe-signature"] as string;
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET!);
+      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_MARKETPLACE_WEBHOOK_SECRET!);
     } catch (e: any) {
       return res.status(400).json({ error: `Webhook error: ${e.message}` });
     }
