@@ -25,7 +25,7 @@ interface AuthUser {
 interface AuthContextType {
   user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   register: (data: any) => Promise<{ user: any; tier: string; price: number }>;
   isLoading: boolean;
 }
@@ -35,10 +35,10 @@ const AuthContext = createContext<AuthContextType | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [userId, setUserId] = useState<number | null>(null);
-
   useEffect(() => {
-    // Try to restore session from memory (React state only, no localStorage)
+    fetch("/api/auth/me").then(async res => {
+      if (res.ok) setUser(await res.json());
+    });
   }, []);
 
   const login = async (email: string, password: string) => {
@@ -55,15 +55,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const data = await res.json();
       setUser(data.user);
-      setUserId(data.user.id);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
     setUser(null);
-    setUserId(null);
   };
 
   const register = async (data: any) => {
@@ -76,7 +75,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
       const result = await res.json();
       setUser(result.user);
-      setUserId(result.user.id);
       return { user: result.user, tier: result.tier, price: result.price };
     } finally {
       setIsLoading(false);

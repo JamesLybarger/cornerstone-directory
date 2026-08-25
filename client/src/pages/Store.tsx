@@ -1,13 +1,11 @@
 import { useState } from "react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useToast } from "@/hooks/use-toast";
-import { useAuth } from "../contexts/AuthContext";
 import { ShoppingBag, Download, Calendar, BookOpen, FileText, Star, Clock } from "lucide-react";
-import { Link } from "wouter";
+import { apiRequest } from "@/lib/queryClient";
 
 const CATEGORY_ICONS: Record<string, any> = {
   digital: Download,
@@ -24,24 +22,6 @@ export default function Store() {
     queryKey: ["/api/products"],
     queryFn: () => apiRequest("GET", "/api/products").then(r => r.json()),
   });
-  const { user } = useAuth();
-  const { toast } = useToast();
-
-  const purchase = useMutation({
-    mutationFn: async (product: any) => {
-      if (!user) throw new Error("Please sign in to purchase.");
-      const res = await apiRequest("POST", "/api/orders", { userId: user.id, productId: product.id, amount: product.price, status: "completed" });
-      if (!res.ok) throw new Error("Order failed");
-      return res.json();
-    },
-    onSuccess: (_, product: any) => {
-      toast({ title: "Purchase successful!", description: `"${product.title}" has been added to your library.` });
-    },
-    onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
-    },
-  });
-
   const filtered = activeCategory === "all" ? products : products.filter((p: any) => p.category === activeCategory);
 
   return (
@@ -111,24 +91,9 @@ export default function Store() {
                   <p className="text-xs text-muted-foreground leading-relaxed flex-1 line-clamp-3">{product.description}</p>
                   <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
                     <span className="text-xl font-black text-primary">${product.price.toFixed(2)}</span>
-                    {user ? (
-                      <Button
-                        size="sm"
-                        className="crimson-gradient text-[hsl(38,20%,96%)] font-bold shine-btn"
-                        onClick={() => purchase.mutate(product)}
-                        disabled={purchase.isPending}
-                        data-testid={`btn-buy-${product.id}`}
-                      >
-                        <ShoppingBag className="w-3.5 h-3.5 mr-1.5" />
-                        {purchase.isPending ? "Processing..." : "Purchase"}
-                      </Button>
-                    ) : (
-                      <Link href="/login">
-                        <Button size="sm" variant="outline" data-testid={`btn-buy-guest-${product.id}`}>
-                          Sign in to buy
-                        </Button>
-                      </Link>
-                    )}
+                    <Button size="sm" variant="outline" disabled data-testid={`btn-coming-soon-${product.id}`}>
+                      <Clock className="w-3.5 h-3.5 mr-1.5" /> Coming Soon
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

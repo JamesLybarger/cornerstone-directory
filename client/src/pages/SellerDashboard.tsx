@@ -16,7 +16,7 @@ export default function SellerDashboard() {
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ["/api/marketplace/seller/stats", user?.id],
     queryFn: async () => {
-      const res = await fetch("/api/marketplace/seller/stats", { headers: { "x-user-id": String(user!.id) } });
+      const res = await fetch("/api/marketplace/seller/stats");
       return res.json();
     },
     enabled: !!user && user.membershipTier !== "free",
@@ -25,7 +25,7 @@ export default function SellerDashboard() {
   const { data: myListings = [], isLoading: listingsLoading } = useQuery({
     queryKey: ["/api/marketplace/my-listings", user?.id],
     queryFn: async () => {
-      const res = await fetch("/api/marketplace/my-listings", { headers: { "x-user-id": String(user!.id) } });
+      const res = await fetch("/api/marketplace/my-listings");
       return res.json();
     },
     enabled: !!user && user.membershipTier !== "free",
@@ -34,7 +34,7 @@ export default function SellerDashboard() {
   const { data: sellerStatus } = useQuery({
     queryKey: ["/api/marketplace/seller/status", user?.id],
     queryFn: async () => {
-      const res = await fetch("/api/marketplace/seller/status", { headers: { "x-user-id": String(user!.id) } });
+      const res = await fetch("/api/marketplace/seller/status");
       return res.json();
     },
     enabled: !!user && user.membershipTier !== "free",
@@ -42,10 +42,7 @@ export default function SellerDashboard() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/marketplace/listings/${id}`, {
-        method: "DELETE",
-        headers: { "x-user-id": String(user!.id) },
-      });
+      const res = await fetch(`/api/marketplace/listings/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete");
     },
     onSuccess: () => {
@@ -58,10 +55,7 @@ export default function SellerDashboard() {
   // Admin: approve listing
   const approveMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/marketplace/listings/${id}/approve`, {
-        method: "PATCH",
-        headers: { "x-user-id": String(user!.id) },
-      });
+      const res = await fetch(`/api/marketplace/listings/${id}/approve`, { method: "PATCH" });
       if (!res.ok) throw new Error("Failed to approve");
       return res.json();
     },
@@ -75,7 +69,7 @@ export default function SellerDashboard() {
   const { data: allListings = [], isLoading: allLoading } = useQuery({
     queryKey: ["/api/marketplace/listings/all", user?.id],
     queryFn: async () => {
-      const res = await fetch("/api/marketplace/listings/all", { headers: { "x-user-id": String(user!.id) } });
+      const res = await fetch("/api/marketplace/listings/all");
       return res.json();
     },
     enabled: !!user && user.role === "admin",

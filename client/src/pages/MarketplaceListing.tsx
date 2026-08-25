@@ -26,10 +26,7 @@ export default function MarketplaceListing() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
-      const res = await apiRequest("POST", "/api/marketplace/checkout", {
-        listingId: id,
-        buyerId: user?.id,
-      });
+      const res = await apiRequest("POST", "/api/marketplace/checkout", { listingId: id });
       return res.json();
     },
     onSuccess: (data) => {

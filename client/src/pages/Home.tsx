@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { apiRequest } from "@/lib/queryClient";
 import {
   ArrowRight, Users, BookOpen, Star, Shield, Globe, Gift,
   Check, X, DollarSign, TrendingUp, Award, Heart

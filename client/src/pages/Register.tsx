@@ -37,8 +37,8 @@ export default function Register() {
 
   // Stripe checkout mutation
   const checkoutMutation = useMutation({
-    mutationFn: async ({ userId, referralCode }: { userId: number; referralCode: string }) => {
-      const res = await apiRequest("POST", "/api/stripe/create-checkout", { userId, referralCode });
+    mutationFn: async ({ referralCode }: { referralCode: string }) => {
+      const res = await apiRequest("POST", "/api/stripe/create-checkout", { referralCode });
       const data = await res.json();
       // Surface server error messages properly
       if (!res.ok || data.error) {
@@ -80,7 +80,7 @@ export default function Register() {
       setCreatedUser({ id: result.user?.id, tier: result.tier, referralCode: data.referralCode || "" });
       setStep("redirecting");
       // Launch Stripe checkout
-      checkoutMutation.mutate({ userId: result.user?.id, referralCode: data.referralCode || "" });
+      checkoutMutation.mutate({ referralCode: data.referralCode || "" });
     } catch (err: any) {
       toast({ title: "Registration failed", description: err.message, variant: "destructive" });
     }

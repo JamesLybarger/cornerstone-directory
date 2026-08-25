@@ -3,6 +3,7 @@ import { useParams, Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { apiRequest } from "@/lib/queryClient";
 import { ArrowLeft, Calendar } from "lucide-react";
 
 export default function BlogPost() {

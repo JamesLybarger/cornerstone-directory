@@ -35,7 +35,7 @@ export default function Directory() {
 
   const addBusiness = useMutation({
     mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/businesses", { ...data, userId: user?.id || 1 });
+      const res = await apiRequest("POST", "/api/businesses", data);
       if (!res.ok) throw new Error("Failed to list business");
       return res.json();
     },

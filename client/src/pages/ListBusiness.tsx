@@ -110,14 +110,10 @@ export default function ListBusiness() {
   const mutation = useMutation({
     mutationFn: async (values: ListingFormValues) => {
       if (isEdit) {
-        const res = await apiRequest("PUT", `/api/businesses/${existingBusiness.id}`, values, {
-          "x-user-id": String(user!.id),
-        });
+        const res = await apiRequest("PUT", `/api/businesses/${existingBusiness.id}`, values);
         return res.json();
       } else {
-        const res = await apiRequest("POST", "/api/businesses", values, {
-          "x-user-id": String(user!.id),
-        });
+        const res = await apiRequest("POST", "/api/businesses", values);
         return res.json();
       }
     },

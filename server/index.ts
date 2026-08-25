@@ -6,6 +6,7 @@ import { registerStripeRoutes } from "./stripe-routes";
 import { registerMarketplaceRoutes } from "./marketplace-routes";
 import { serveStatic } from "./static";
 import { createServer } from "node:http";
+import { sessionMiddleware } from "./auth";
 
 const app = express();
 const httpServer = createServer(app);
@@ -25,6 +26,8 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: false }));
+app.set("trust proxy", 1);
+app.use(sessionMiddleware());
 
 export function log(message: string, source = "express") {
   const formattedTime = new Date().toLocaleTimeString("en-US", {

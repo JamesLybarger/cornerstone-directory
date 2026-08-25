@@ -63,7 +63,7 @@ export default function NewListing() {
         const base64 = (ev.target?.result as string).split(",")[1];
         const res = await fetch("/api/marketplace/upload", {
           method: "POST",
-          headers: { "Content-Type": "application/json", "x-user-id": String(user!.id) },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ fileName: file.name, fileData: base64, mimeType: file.type }),
         });
         const data = await res.json();
@@ -86,7 +86,7 @@ export default function NewListing() {
     mutationFn: async (values: FormValues) => {
       const res = await fetch("/api/marketplace/listings", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": String(user!.id) },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
           fileName: uploadedFile?.fileName,

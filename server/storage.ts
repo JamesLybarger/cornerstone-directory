@@ -1,6 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { Pool } from "pg";
 import { eq, desc, and } from "drizzle-orm";
+import crypto from "node:crypto";
 import {
   users, businesses, products, orders, posts, bookings, resources, referrals,
   listings, purchases, sellerProfiles,
@@ -181,7 +182,7 @@ async function initDb() {
   if (!existingAdmin) {
     const [admin] = await db.insert(users).values({
       email: "admin@cornerstonedirectory.com",
-      password: "admin123",
+      password: process.env.ADMIN_INITIAL_PASSWORD || crypto.randomBytes(48).toString("hex"),
       firstName: "Platform",
       lastName: "Admin",
       businessName: "Cornerstone Directory",

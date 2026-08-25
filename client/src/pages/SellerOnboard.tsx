@@ -20,9 +20,7 @@ export default function SellerOnboard() {
 
   useEffect(() => {
     if (!user) { setLoading(false); return; }
-    fetch("/api/marketplace/seller/status", {
-      headers: { "x-user-id": String(user.id) },
-    })
+    fetch("/api/marketplace/seller/status")
       .then(r => r.json())
       .then(d => { setStatus(d); setLoading(false); })
       .catch(() => setLoading(false));
@@ -33,7 +31,7 @@ export default function SellerOnboard() {
     try {
       const res = await fetch("/api/marketplace/seller/onboard", {
         method: "POST",
-        headers: { "Content-Type": "application/json", "x-user-id": String(user!.id) },
+        headers: { "Content-Type": "application/json" },
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;

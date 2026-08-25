@@ -4,8 +4,9 @@ import crypto from "crypto";
 import { storage } from "./storage";
 import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { currentUser } from "./auth";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: "2024-06-20" });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const PLATFORM_FEE_PERCENT = 0.06; // 6%
 const APP_URL = (process.env.APP_URL || "https://cornerstonedirectory.com").replace(/\/$/, "");
 
@@ -31,8 +32,8 @@ export function registerMarketplaceRoutes(app: Express) {
   // Create / get seller profile
   app.post("/api/marketplace/seller/onboard", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       if (!user || user.membershipTier === "free") {
         return res.status(403).json({ error: "Paid membership required to become a seller." });
       }
@@ -73,7 +74,7 @@ export function registerMarketplaceRoutes(app: Express) {
   // Get seller profile status
   app.get("/api/marketplace/seller/status", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
+      const userId = (await currentUser(req))?.id || 0;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
       const profile = await storage.getSellerProfile(userId);
@@ -120,8 +121,8 @@ export function registerMarketplaceRoutes(app: Express) {
   // GET all listings (admin)
   app.get("/api/marketplace/listings/all", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
       const all = await storage.getAllListings();
       const withSellers = await Promise.all(all.map(async l => {
@@ -149,7 +150,7 @@ export function registerMarketplaceRoutes(app: Express) {
   // GET my listings (seller)
   app.get("/api/marketplace/my-listings", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
+      const userId = (await currentUser(req))?.id || 0;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
       const listings = await storage.getListingsBySeller(userId);
       res.json(listings);
@@ -161,8 +162,8 @@ export function registerMarketplaceRoutes(app: Express) {
   // POST create listing (multipart form with file)
   app.post("/api/marketplace/listings", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       if (!user || user.membershipTier === "free") {
         return res.status(403).json({ error: "Paid membership required to sell." });
       }
@@ -198,14 +199,19 @@ export function registerMarketplaceRoutes(app: Express) {
   // PUT update listing
   app.put("/api/marketplace/listings/:id", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       const listing = await storage.getListing(parseInt(req.params.id));
       if (!listing) return res.status(404).json({ error: "Not found" });
       if (!user || (listing.sellerId !== userId && user.role !== "admin")) {
         return res.status(403).json({ error: "Not authorized" });
       }
-      const updated = await storage.updateListing(listing.id, req.body);
+      const allowed: any = {};
+      for (const key of ["title", "description", "price", "category", "imageUrl", "fileName", "fileKey", "fileSize", "active"]) {
+        if (key in req.body) allowed[key] = req.body[key];
+      }
+      if (user.role === "admin" && "approved" in req.body) allowed.approved = Boolean(req.body.approved);
+      const updated = await storage.updateListing(listing.id, allowed);
       res.json(updated);
     } catch (e: any) {
       res.status(500).json({ error: e.message });
@@ -215,8 +221,8 @@ export function registerMarketplaceRoutes(app: Express) {
   // DELETE listing
   app.delete("/api/marketplace/listings/:id", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       const listing = await storage.getListing(parseInt(req.params.id));
       if (!listing) return res.status(404).json({ error: "Not found" });
       if (!user || (listing.sellerId !== userId && user.role !== "admin")) {
@@ -232,8 +238,8 @@ export function registerMarketplaceRoutes(app: Express) {
   // PATCH approve listing (admin only)
   app.patch("/api/marketplace/listings/:id/approve", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
-      const user = userId ? await storage.getUser(userId) : null;
+      const user = await currentUser(req);
+      const userId = user?.id || 0;
       if (!user || user.role !== "admin") return res.status(403).json({ error: "Admin only" });
       const updated = await storage.updateListing(parseInt(req.params.id), { approved: true });
       res.json(updated);
@@ -246,17 +252,18 @@ export function registerMarketplaceRoutes(app: Express) {
 
   app.post("/api/marketplace/checkout", async (req, res) => {
     try {
-      const { listingId, buyerId } = req.body;
+      const user = await currentUser(req);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+      const buyerId = user.id;
+      const { listingId } = req.body;
       const listing = await storage.getListing(parseInt(listingId));
       if (!listing || !listing.approved || !listing.active) {
         return res.status(404).json({ error: "Listing not available" });
       }
 
       // Check if already purchased
-      if (buyerId) {
-        const alreadyBought = await storage.hasBuyerPurchased(parseInt(buyerId), listing.id);
-        if (alreadyBought) return res.status(409).json({ error: "You already own this product." });
-      }
+      const alreadyBought = await storage.hasBuyerPurchased(buyerId, listing.id);
+      if (alreadyBought) return res.status(409).json({ error: "You already own this product." });
 
       const sellerProfile = await storage.getSellerProfile(listing.sellerId);
       const platformFee = Math.round(listing.price * PLATFORM_FEE_PERCENT * 100); // cents
@@ -279,7 +286,7 @@ export function registerMarketplaceRoutes(app: Express) {
         metadata: {
           listingId: String(listing.id),
           sellerId: String(listing.sellerId),
-          buyerId: buyerId ? String(buyerId) : "",
+          buyerId: String(buyerId),
         },
       };
 
@@ -302,9 +309,14 @@ export function registerMarketplaceRoutes(app: Express) {
 
   app.post("/api/marketplace/webhook", async (req, res) => {
     const sig = req.headers["stripe-signature"] as string;
+    const webhookSecret = process.env.STRIPE_MARKETPLACE_WEBHOOK_SECRET;
+    const rawBody = (req as any).rawBody;
     let event: Stripe.Event;
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_MARKETPLACE_WEBHOOK_SECRET!);
+      if (!webhookSecret || !sig || !rawBody) {
+        return res.status(503).json({ error: "Stripe marketplace webhook verification is not configured" });
+      }
+      event = stripe.webhooks.constructEvent(rawBody, sig, webhookSecret);
     } catch (e: any) {
       return res.status(400).json({ error: `Webhook error: ${e.message}` });
     }
@@ -350,7 +362,9 @@ export function registerMarketplaceRoutes(app: Express) {
   // This is idempotent — safe to call multiple times for the same session
   app.post("/api/marketplace/verify-purchase", async (req, res) => {
     try {
-      const { sessionId, listingId, buyerId } = req.body;
+      const user = await currentUser(req);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
+      const { sessionId, listingId } = req.body;
 
       if (!sessionId) return res.status(400).json({ error: "sessionId required" });
 
@@ -361,18 +375,24 @@ export function registerMarketplaceRoutes(app: Express) {
         return res.status(402).json({ error: "Payment not completed" });
       }
 
+      const metadataBuyerId = parseInt(session.metadata?.buyerId || "0");
+      if (!metadataBuyerId || metadataBuyerId !== user.id) {
+        return res.status(403).json({ error: "This purchase does not belong to the signed-in account" });
+      }
+
       const paymentIntentId = session.payment_intent as string;
 
       // STEP 1: Check if purchase already exists for this payment intent (idempotent)
       if (paymentIntentId) {
         const existing = await storage.getPurchaseByPaymentIntent(paymentIntentId);
         if (existing) {
+          if (existing.buyerId !== user.id) return res.status(403).json({ error: "Not authorized" });
           return res.json({ token: existing.downloadToken, listingId: existing.listingId });
         }
       }
 
       // STEP 2: Also check by buyerId + listingId in case payment intent wasn't stored
-      const parsedBuyerId = buyerId ? parseInt(buyerId) : 0;
+      const parsedBuyerId = user.id;
       const parsedListingId = listingId ? parseInt(listingId) : parseInt(session.metadata?.listingId || "0");
 
       if (parsedBuyerId && parsedListingId) {
@@ -453,7 +473,7 @@ export function registerMarketplaceRoutes(app: Express) {
   // Simple base64 file upload endpoint
   app.post("/api/marketplace/upload", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
+      const userId = (await currentUser(req))?.id || 0;
       const user = userId ? await storage.getUser(userId) : null;
       if (!user || (user.membershipTier === "free" && user.role !== "admin")) {
         return res.status(403).json({ error: "Paid membership required." });
@@ -483,7 +503,7 @@ export function registerMarketplaceRoutes(app: Express) {
 
   app.get("/api/marketplace/seller/stats", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
+      const userId = (await currentUser(req))?.id || 0;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
       const [myListings, mySales] = await Promise.all([
@@ -512,7 +532,7 @@ export function registerMarketplaceRoutes(app: Express) {
 
   app.get("/api/marketplace/my-purchases", async (req, res) => {
     try {
-      const userId = parseInt(req.headers["x-user-id"] as string);
+      const userId = (await currentUser(req))?.id || 0;
       if (!userId) return res.status(401).json({ error: "Not authenticated" });
 
       const purchases = await storage.getPurchasesByBuyer(userId);

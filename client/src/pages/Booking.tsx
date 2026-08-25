@@ -31,11 +31,10 @@ export default function Booking() {
 
   const booking = useMutation({
     mutationFn: async (data: any) => {
-      const userId = user?.id || 0;
       const res = await fetch("/api/bookings", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, userId, status: "pending" }),
+        body: JSON.stringify(data),
       });
       if (!res.ok) throw new Error("Booking failed");
       return res.json();
@@ -108,7 +107,7 @@ export default function Booking() {
           <h2 className="text-lg font-black mb-5">Schedule Your Session</h2>
           {!user && (
             <div className="mb-5 p-4 rounded-lg bg-muted border border-border text-sm text-muted-foreground">
-              <Link href="/register"><span className="text-primary underline cursor-pointer font-semibold">Join or sign in</span></Link> to have your info pre-filled. Guest bookings are also accepted.
+              <Link href="/register"><span className="text-primary underline cursor-pointer font-semibold">Join</span></Link> or <Link href="/login"><span className="text-primary underline cursor-pointer font-semibold">sign in</span></Link> before requesting a session.
             </div>
           )}
           <form onSubmit={handleSubmit((d) => booking.mutate(d))} className="space-y-4">

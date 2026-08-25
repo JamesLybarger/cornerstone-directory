@@ -23,6 +23,7 @@ import SellerOnboard from "./pages/SellerOnboard";
 import NewListing from "./pages/NewListing";
 import SellerDashboard from "./pages/SellerDashboard";
 import NotFound from "./pages/not-found";
+import AdminRecovery from "./pages/AdminRecovery";
 
 export default function App() {
   return (
@@ -48,6 +49,7 @@ export default function App() {
               <Route path="/seller/dashboard" component={SellerDashboard} />
               <Route path="/login" component={Login} />
               <Route path="/register" component={Register} />
+              <Route path="/admin-recovery" component={AdminRecovery} />
               <Route component={NotFound} />
             </Switch>
           </Layout>

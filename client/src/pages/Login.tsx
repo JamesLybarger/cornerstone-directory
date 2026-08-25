@@ -61,9 +61,6 @@ export default function Login() {
               Don't have an account?{" "}
               <Link href="/register"><span className="text-primary hover:underline cursor-pointer font-semibold">Join Now</span></Link>
             </div>
-            <div className="mt-3 p-3 rounded-lg bg-muted text-xs text-muted-foreground">
-              <strong>Demo admin:</strong> admin@cornerstonedirectory.com / admin123
-            </div>
           </CardContent>
         </Card>
 

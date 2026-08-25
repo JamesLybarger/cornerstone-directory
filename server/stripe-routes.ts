@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import Stripe from "stripe";
 import { storage } from "./storage";
+import { currentUser } from "./auth";
 
 const REFERRAL_CREDIT = 4.99;
 const FOUNDING_PRICE = 59.99;
@@ -13,13 +14,11 @@ export function registerStripeRoutes(app: Express) {
   if (!secretKey) {
     console.error("[Stripe] ⚠️  STRIPE_SECRET_KEY is not set!");
   } else if (!secretKey.startsWith("sk_live_") && !secretKey.startsWith("sk_test_")) {
-    console.error(`[Stripe] ⚠️  STRIPE_SECRET_KEY looks wrong — starts with: ${secretKey.substring(0, 12)}...`);
+    console.error("[Stripe] ⚠️  STRIPE_SECRET_KEY has an unexpected format");
   } else {
-    console.log(`[Stripe] ✅ Key loaded — ${secretKey.startsWith("sk_live_") ? "LIVE" : "TEST"} mode, length: ${secretKey.length}`);
+    console.log(`[Stripe] Payment service initialized in ${secretKey.startsWith("sk_live_") ? "live" : "test"} mode.`);
   }
-  const stripe = new Stripe(secretKey, {
-    apiVersion: "2024-06-20",
-  });
+  const stripe = new Stripe(secretKey);
 
   const WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
   const APP_URL = (process.env.APP_URL || "https://cornerstonedirectory.com").replace(/\/$/, "");
@@ -27,11 +26,9 @@ export function registerStripeRoutes(app: Express) {
   // ── CREATE CHECKOUT SESSION ───────────────────────────────────────────────
   app.post("/api/stripe/create-checkout", async (req, res) => {
     try {
-      const { userId, referralCode } = req.body;
-      if (!userId) return res.status(400).json({ error: "userId required" });
-
-      const user = await storage.getUser(parseInt(userId));
-      if (!user) return res.status(404).json({ error: "User not found" });
+      const { referralCode } = req.body;
+      const user = await currentUser(req);
+      if (!user) return res.status(401).json({ error: "Not authenticated" });
 
       const paidCount = await storage.getPaidMemberCount();
       const isFounding = paidCount < FOUNDING_LIMIT;
@@ -98,12 +95,10 @@ export function registerStripeRoutes(app: Express) {
       let event: Stripe.Event;
 
       try {
-        if (WEBHOOK_SECRET && sig && rawBody) {
-          event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
-        } else {
-          // Fallback: use already-parsed body (no signature verification)
-          event = req.body as Stripe.Event;
+        if (!WEBHOOK_SECRET || !sig || !rawBody) {
+          return res.status(503).json({ error: "Stripe webhook verification is not configured" });
         }
+        event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
       } catch (e: any) {
         console.error("Webhook sig error:", e.message);
         return res.status(400).json({ error: e.message });
@@ -117,7 +112,6 @@ export function registerStripeRoutes(app: Express) {
           await storage.updateUser(uid, {
             membershipTier: tier as "founding" | "annual",
             membershipPrice: tier === "founding" ? FOUNDING_PRICE : ANNUAL_PRICE,
-            isActive: true,
           });
           if (referralCode) {
             const referrer = await storage.getUserByReferralCode(referralCode);
