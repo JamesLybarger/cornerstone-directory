@@ -319,6 +319,23 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(all.map(({ password: _, ...u }) => u));
   });
 
+  // ADMIN — upgrade user tier manually
+  app.post("/api/admin/set-tier", requireAdmin, async (req, res) => {
+    try {
+      const { userId, tier } = req.body;
+      if (!userId || !tier) return res.status(400).json({ error: "userId and tier required" });
+      const updated = await storage.updateUser(parseInt(userId), {
+        membershipTier: tier,
+        membershipPrice: tier === "founding" ? 59.99 : tier === "annual" ? 59.99 : 0,
+      });
+      if (!updated) return res.status(404).json({ error: "User not found" });
+      const { password: _, ...safe } = updated;
+      res.json(safe);
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // RESOURCES
   const handleResources = async (req: Request, res: Response) => {
     try {
