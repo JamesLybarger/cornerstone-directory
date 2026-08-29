@@ -123,6 +123,13 @@ export default function Register() {
           <p className="text-xs text-muted-foreground mt-6">
             Powered by Stripe — your payment info is never stored on our servers.
           </p>
+          <div className="mt-6 pt-4 border-t border-border">
+            <Link href="/marketplace">
+              <button className="text-xs text-muted-foreground underline hover:text-foreground">
+                Skip for now — browse as free member
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
     );
