@@ -74,7 +74,7 @@ export default function Home() {
       </section>
 
       {/* ── MEMBERSHIP TIERS ── */}
-      <section className="py-20 px-4 sm:px-6 bg-card">
+      <section id="membership-plans" className="py-20 px-4 sm:px-6 bg-card">
         <div className="max-w-5xl mx-auto">
           <div className="text-center mb-12">
             <h2 className="text-3xl font-black text-foreground mb-3">Membership Plans</h2>

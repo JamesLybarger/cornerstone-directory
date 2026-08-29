@@ -105,6 +105,19 @@ export default function Layout({ children }: { children: ReactNode }) {
                       <UserCog className="w-4 h-4" /> Edit Profile
                     </Link>
                   </DropdownMenuItem>
+                  {user.membershipTier === "free" && (
+                    <DropdownMenuItem asChild>
+                      <button
+                        className="flex items-center gap-2 cursor-pointer w-full text-primary font-semibold"
+                        onClick={() => {
+                          window.location.hash = "/";
+                          setTimeout(() => document.getElementById("membership-plans")?.scrollIntoView({ behavior: "smooth" }), 200);
+                        }}
+                      >
+                        <UserPlus className="w-4 h-4" /> Upgrade Membership
+                      </button>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={logout} className="text-destructive gap-2 cursor-pointer">
                     <LogOut className="w-4 h-4" /> Sign Out
                   </DropdownMenuItem>

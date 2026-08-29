@@ -157,9 +157,16 @@ export default function Dashboard() {
           <div>
             <h3 className="font-bold text-sm mb-1">Upgrade to list your business</h3>
             <p className="text-sm text-muted-foreground mb-3">Paid members can list their business, unlock premium resources, and earn referral credits.</p>
-            <Link href="/register">
-              <Button size="sm" className="crimson-gradient text-[hsl(38,20%,96%)] font-bold shine-btn">Become a Member</Button>
-            </Link>
+            <Button
+              size="sm"
+              className="crimson-gradient text-[hsl(38,20%,96%)] font-bold shine-btn"
+              onClick={() => {
+                window.location.hash = "/";
+                setTimeout(() => document.getElementById("membership-plans")?.scrollIntoView({ behavior: "smooth" }), 200);
+              }}
+            >
+              Become a Member
+            </Button>
           </div>
         </div>
       )}
