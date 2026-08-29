@@ -1,15 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { apiRequest } from "@/lib/queryClient";
+import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 import {
   ArrowRight, Users, BookOpen, Star, Shield, Globe, Gift,
-  Check, X, DollarSign, TrendingUp, Award, Heart
+  Check, X, DollarSign, TrendingUp, Award, Heart, Loader2
 } from "lucide-react";
 
 export default function Home() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: () => apiRequest("GET", "/api/stats").then(r => r.json()) });
   const { data: founding } = useQuery({ queryKey: ["/api/founding-spots"], queryFn: () => apiRequest("GET", "/api/founding-spots").then(r => r.json()) });
   const { data: featuredPost } = useQuery({ queryKey: ["/api/posts/featured"], queryFn: () => apiRequest("GET", "/api/posts/featured").then(r => r.json()) });
@@ -18,6 +22,33 @@ export default function Home() {
 
   const spotsLeft = founding?.remaining ?? "…";
   const isFull = founding?.isFull ?? false;
+
+  // For logged-in free members — trigger membership checkout directly
+  const upgradeMutation = useMutation({
+    mutationFn: async (referralCode: string) => {
+      const res = await apiRequest("POST", "/api/stripe/create-checkout", { referralCode });
+      const data = await res.json();
+      if (!res.ok || data.error) throw new Error(data.error || "Checkout failed");
+      return data;
+    },
+    onSuccess: (data) => {
+      if (data.url) window.location.href = data.url;
+    },
+    onError: (e: any) => toast({ title: "Checkout failed", description: e.message, variant: "destructive" }),
+  });
+
+  const handlePlanClick = (tierName: string, freeLink?: string) => {
+    if (tierName === "Free Access") {
+      window.location.hash = freeLink || "/register?free=1";
+      return;
+    }
+    if (user && user.membershipTier === "free") {
+      // Already logged in — go straight to Stripe
+      upgradeMutation.mutate("");
+    } else {
+      window.location.hash = "/register";
+    }
+  };
 
   return (
     <div className="overflow-hidden">
@@ -172,15 +203,16 @@ export default function Home() {
                       </li>
                     ))}
                   </ul>
-                  <Link href={(tier as any).freeLink || "/register"}>
-                    <Button
-                      className={`w-full font-bold ${tier.highlight ? "crimson-gradient text-[hsl(38,20%,96%)] shine-btn" : ""}`}
-                      variant={tier.highlight ? "default" : "outline"}
-                      disabled={tier.disabled}
-                    >
-                      {tier.cta}
-                    </Button>
-                  </Link>
+                  <Button
+                    className={`w-full font-bold ${tier.highlight ? "crimson-gradient text-[hsl(38,20%,96%)] shine-btn" : ""}`}
+                    variant={tier.highlight ? "default" : "outline"}
+                    disabled={tier.disabled || upgradeMutation.isPending}
+                    onClick={() => handlePlanClick(tier.name, (tier as any).freeLink)}
+                  >
+                    {upgradeMutation.isPending && tier.name !== "Free Access" ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Processing…</>
+                    ) : tier.cta}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
