@@ -48,9 +48,11 @@ export default function Home() {
       return;
     }
     if (user) {
-      // Already logged in — go straight to Stripe regardless of tier
+      // Already logged in — go straight to Stripe
+      toast({ title: `Launching Stripe for ${user.email}...`, duration: 5000 });
       upgradeMutation.mutate("");
     } else {
+      toast({ title: "No user session found", description: "Redirecting to register", duration: 5000 });
       window.location.hash = "/register";
     }
   };
