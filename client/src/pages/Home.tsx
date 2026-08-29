@@ -26,15 +26,20 @@ export default function Home() {
   // For logged-in free members — trigger membership checkout directly
   const upgradeMutation = useMutation({
     mutationFn: async (referralCode: string) => {
-      const res = await apiRequest("POST", "/api/stripe/create-checkout", { referralCode });
+      const res = await fetch("/api/stripe/create-checkout", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ referralCode }),
+      });
       const data = await res.json();
-      if (!res.ok || data.error) throw new Error(data.error || "Checkout failed");
+      if (!res.ok || data.error) throw new Error(data.error || `Error ${res.status}`);
       return data;
     },
     onSuccess: (data) => {
       if (data.url) window.location.href = data.url;
     },
-    onError: (e: any) => toast({ title: "Checkout failed", description: e.message, variant: "destructive" }),
+    onError: (e: any) => toast({ title: "Checkout failed", description: e.message, variant: "destructive", duration: 10000 }),
   });
 
   const handlePlanClick = (tierName: string, freeLink?: string) => {
