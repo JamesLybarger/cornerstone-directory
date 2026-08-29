@@ -16,10 +16,16 @@ export default function Login() {
   const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
 
+  // Check for redirect param in hash query string
+  const hashQuery = window.location.hash.includes("?") 
+    ? new URLSearchParams(window.location.hash.split("?")[1]) 
+    : new URLSearchParams(window.location.search);
+  const redirectTo = hashQuery.get("redirect") || "/dashboard";
+
   const onSubmit = async (data: any) => {
     try {
       await login(data.email, data.password);
-      setLocation("/dashboard");
+      setLocation(redirectTo);
     } catch (err: any) {
       toast({ title: "Login failed", description: err.message, variant: "destructive" });
     }

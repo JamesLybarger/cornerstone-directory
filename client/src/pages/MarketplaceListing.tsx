@@ -26,6 +26,11 @@ export default function MarketplaceListing() {
 
   const checkoutMutation = useMutation({
     mutationFn: async () => {
+      if (!user) {
+        // Redirect to login, then back to this listing
+        setLocation(`/login?redirect=/marketplace/${id}`);
+        throw new Error("login_required");
+      }
       const res = await apiRequest("POST", "/api/marketplace/checkout", { listingId: id });
       return res.json();
     },
@@ -34,7 +39,9 @@ export default function MarketplaceListing() {
       else toast({ title: "Checkout failed", description: data.error, variant: "destructive" });
     },
     onError: (e: any) => {
-      toast({ title: "Error", description: e.message, variant: "destructive" });
+      if (e.message !== "login_required") {
+        toast({ title: "Error", description: e.message, variant: "destructive" });
+      }
     },
   });
 
