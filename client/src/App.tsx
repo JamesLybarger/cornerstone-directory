@@ -1,5 +1,25 @@
 import { Switch, Route, Router } from "wouter";
 import { useHashLocation } from "wouter/use-hash-location";
+import { useState, useEffect, useCallback } from "react";
+
+// Custom hook: strips query string from hash so Wouter routes match correctly
+// e.g. /#/marketplace/success?session_id=... → path is /marketplace/success
+function useHashLocationNoQuery(): [string, (to: string) => void] {
+  const getPath = () => {
+    const hash = window.location.hash.replace(/^#/, "") || "/";
+    return hash.split("?")[0] || "/";
+  };
+  const [path, setPath] = useState(getPath);
+  useEffect(() => {
+    const handler = () => setPath(getPath());
+    window.addEventListener("hashchange", handler);
+    return () => window.removeEventListener("hashchange", handler);
+  }, []);
+  const navigate = useCallback((to: string) => {
+    window.location.hash = to;
+  }, []);
+  return [path, navigate];
+}
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { Toaster } from "@/components/ui/toaster";
@@ -29,7 +49,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router hook={useHashLocation}>
+        <Router hook={useHashLocationNoQuery}>
           <Layout>
             <Switch>
               <Route path="/" component={Home} />
