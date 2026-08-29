@@ -20,9 +20,22 @@ export default function Register() {
   const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
   const [createdUser, setCreatedUser] = useState<{ id: number; tier: string; referralCode: string } | null>(null);
   const { register: reg, handleSubmit, setValue, watch } = useForm();
-  const { register: authRegister, isLoading } = useAuth();
+  const { register: authRegister, isLoading, user } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+
+  // Already logged in — send free members to plans, paid members to dashboard
+  if (user) {
+    if (user.membershipTier === "free") {
+      setTimeout(() => {
+        window.location.hash = "/";
+        setTimeout(() => document.getElementById("membership-plans")?.scrollIntoView({ behavior: "smooth" }), 300);
+      }, 0);
+    } else {
+      setLocation("/dashboard");
+    }
+    return null;
+  }
   const search = useSearch();
   const params = new URLSearchParams(search);
   const prefillCode = params.get("ref") || "";
