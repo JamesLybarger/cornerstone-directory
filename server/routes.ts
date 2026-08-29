@@ -334,17 +334,5 @@ export async function registerRoutes(httpServer: Server, app: Express) {
   app.get("/api/resources/:userId", handleResources);
   app.get("/api/resources", handleResources);
 
-  // TEMP: wipe test purchases for user IDs 3 and 4
-  app.delete("/api/admin/wipe-test-purchases", requireAdmin, async (req, res) => {
-    try {
-      const { Pool } = await import("pg");
-      const pool = new Pool({ connectionString: process.env.DATABASE_URL });
-      await pool.query("DELETE FROM purchases WHERE buyer_id IN (3, 4)");
-      await pool.end();
-      res.json({ ok: true, message: "Test purchases wiped" });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message });
-    }
-  });
 
 }

@@ -8,8 +8,19 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function MarketplaceSuccess() {
   // Capture params immediately on mount — before any URL cleanup
-  const [sessionId] = useState(() => new URLSearchParams(window.location.search).get("session_id"));
-  const [listingId] = useState(() => new URLSearchParams(window.location.search).get("listing_id"));
+  // Params come after the hash: /#/marketplace/success?session_id=...&listing_id=...
+  const [sessionId] = useState(() => {
+    const hash = window.location.hash; // e.g. #/marketplace/success?session_id=cs_xxx&listing_id=3
+    const qIndex = hash.indexOf("?");
+    const params = qIndex !== -1 ? new URLSearchParams(hash.slice(qIndex)) : new URLSearchParams(window.location.search);
+    return params.get("session_id");
+  });
+  const [listingId] = useState(() => {
+    const hash = window.location.hash;
+    const qIndex = hash.indexOf("?");
+    const params = qIndex !== -1 ? new URLSearchParams(hash.slice(qIndex)) : new URLSearchParams(window.location.search);
+    return params.get("listing_id");
+  });
   const { user } = useAuth();
   const verifiedRef = useRef(false);
 
@@ -30,7 +41,7 @@ export default function MarketplaceSuccess() {
     }
 
     // Clean URL immediately so reload doesn't re-trigger
-    window.history.replaceState({}, "", "/#/marketplace/success");
+    window.history.replaceState({}, "", window.location.pathname + "#/marketplace/success");
 
     const verify = async () => {
       try {
