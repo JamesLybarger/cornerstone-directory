@@ -244,10 +244,10 @@ export default function Register() {
               >
                 {isLoading || checkoutMutation.isPending
                   ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Processing...</>
-                  : `Join for ${isFull ? "$59.99/yr" : "$59.99 Lifetime"} →`}
+                  : isFreeSignup ? "Create Free Account →" : `Join for ${isFull ? "$59.99/yr" : "$59.99 Lifetime"} →`}
               </Button>
               <p className="text-xs text-muted-foreground text-center">
-                Membership tier assigned based on spot availability at checkout.
+                {isFreeSignup ? "Free access — browse the directory and marketplace." : "Membership tier assigned based on spot availability at checkout."}
               </p>
             </form>
             <div className="mt-4 text-center text-sm text-muted-foreground">
