@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "wouter";
+import { useAuth } from "../contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { CheckCircle, Download, Loader2, AlertCircle } from "lucide-react";
@@ -9,6 +10,7 @@ export default function MarketplaceSuccess() {
   // Capture params immediately on mount — before any URL cleanup
   const [sessionId] = useState(() => new URLSearchParams(window.location.search).get("session_id"));
   const [listingId] = useState(() => new URLSearchParams(window.location.search).get("listing_id"));
+  const { user } = useAuth();
   const verifiedRef = useRef(false);
 
   const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
@@ -32,7 +34,7 @@ export default function MarketplaceSuccess() {
 
     const verify = async () => {
       try {
-        const res = await apiRequest("POST", "/api/marketplace/verify-purchase", { sessionId, listingId });
+        const res = await apiRequest("POST", "/api/marketplace/verify-purchase", { sessionId, listingId, buyerId: user?.id });
         const data = await res.json();
         if (data.token) {
           setDownloadToken(data.token);
