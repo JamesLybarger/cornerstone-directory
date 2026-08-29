@@ -47,8 +47,8 @@ export default function Home() {
       window.location.hash = freeLink || "/register?free=1";
       return;
     }
-    if (user && user.membershipTier === "free") {
-      // Already logged in — go straight to Stripe
+    if (user) {
+      // Already logged in — go straight to Stripe regardless of tier
       upgradeMutation.mutate("");
     } else {
       window.location.hash = "/register";
