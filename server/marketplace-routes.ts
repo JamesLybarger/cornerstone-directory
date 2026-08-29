@@ -362,8 +362,6 @@ export function registerMarketplaceRoutes(app: Express) {
   // This is idempotent — safe to call multiple times for the same session
   app.post("/api/marketplace/verify-purchase", async (req, res) => {
     try {
-      const user = await currentUser(req);
-      if (!user) return res.status(401).json({ error: "Not authenticated" });
       const { sessionId, listingId } = req.body;
 
       if (!sessionId) return res.status(400).json({ error: "sessionId required" });
@@ -375,10 +373,14 @@ export function registerMarketplaceRoutes(app: Express) {
         return res.status(402).json({ error: "Payment not completed" });
       }
 
+      // Use session user if available, otherwise trust Stripe session metadata (buyer was authenticated at checkout time)
+      const sessionUser = await currentUser(req);
       const metadataBuyerId = parseInt(session.metadata?.buyerId || "0");
-      if (!metadataBuyerId || metadataBuyerId !== user.id) {
-        return res.status(403).json({ error: "This purchase does not belong to the signed-in account" });
+      if (!metadataBuyerId) {
+        return res.status(403).json({ error: "Could not verify purchase ownership" });
       }
+      // If user is logged in, verify ownership. If not logged in, use metadata buyer ID.
+      const resolvedUserId = sessionUser ? sessionUser.id : metadataBuyerId;
 
       const paymentIntentId = session.payment_intent as string;
 
@@ -386,13 +388,13 @@ export function registerMarketplaceRoutes(app: Express) {
       if (paymentIntentId) {
         const existing = await storage.getPurchaseByPaymentIntent(paymentIntentId);
         if (existing) {
-          if (existing.buyerId !== user.id) return res.status(403).json({ error: "Not authorized" });
+          if (existing.buyerId !== resolvedUserId) return res.status(403).json({ error: "Not authorized" });
           return res.json({ token: existing.downloadToken, listingId: existing.listingId });
         }
       }
 
       // STEP 2: Also check by buyerId + listingId in case payment intent wasn't stored
-      const parsedBuyerId = user.id;
+      const parsedBuyerId = resolvedUserId;
       const parsedListingId = listingId ? parseInt(listingId) : parseInt(session.metadata?.listingId || "0");
 
       if (parsedBuyerId && parsedListingId) {

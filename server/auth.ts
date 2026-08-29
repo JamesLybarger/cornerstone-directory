@@ -22,7 +22,7 @@ export function sessionMiddleware() {
     resave: false,
     saveUninitialized: false,
     store: new MemoryStore({ checkPeriod: 24 * 60 * 60 * 1000 }),
-    cookie: { httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", maxAge: 12 * 60 * 60 * 1000 },
+    cookie: { httpOnly: true, sameSite: process.env.NODE_ENV === "production" ? "none" : "lax", secure: process.env.NODE_ENV === "production", maxAge: 12 * 60 * 60 * 1000 },
   });
 }
 
