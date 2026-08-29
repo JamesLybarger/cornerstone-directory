@@ -319,6 +319,16 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     res.json(all.map(({ password: _, ...u }) => u));
   });
 
+  // ADMIN — wipe test users (keep IDs 1 and 2)
+  app.post("/api/admin/wipe-test-users", requireAdmin, async (req, res) => {
+    try {
+      const count = await storage.deleteUsersExcept([1, 2]);
+      res.json({ deleted: count, message: `Deleted ${count} test users` });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // ADMIN — upgrade user tier manually
   app.post("/api/admin/set-tier", requireAdmin, async (req, res) => {
     try {

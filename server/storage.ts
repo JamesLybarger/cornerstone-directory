@@ -369,6 +369,7 @@ export interface IStorage {
   getSellerProfile(userId: number): Promise<SellerProfile | undefined>;
   createSellerProfile(profile: InsertSellerProfile): Promise<SellerProfile>;
   updateSellerProfile(userId: number, updates: Partial<InsertSellerProfile>): Promise<SellerProfile | undefined>;
+  deleteUsersExcept(keepIds: number[]): Promise<number>;
 }
 
 export const storage: IStorage = {
@@ -539,5 +540,10 @@ export const storage: IStorage = {
   async updateSellerProfile(userId, updates) {
     const [updated] = await db.update(sellerProfiles).set(updates).where(eq(sellerProfiles.userId, userId)).returning();
     return updated;
+  },
+  async deleteUsersExcept(keepIds) {
+    const { notInArray } = await import("drizzle-orm");
+    const result = await db.delete(users).where(notInArray(users.id, keepIds));
+    return result.rowCount ?? 0;
   },
 };

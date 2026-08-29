@@ -46,6 +46,7 @@ import NewListing from "./pages/NewListing";
 import SellerDashboard from "./pages/SellerDashboard";
 import NotFound from "./pages/not-found";
 import AdminRecovery from "./pages/AdminRecovery";
+import Admin from "./pages/Admin";
 
 export default function App() {
   return (
@@ -72,6 +73,7 @@ export default function App() {
               <Route path="/login" component={Login} />
               <Route path="/register" component={Register} />
               <Route path="/admin-recovery" component={AdminRecovery} />
+              <Route path="/admin" component={Admin} />
               <Route component={NotFound} />
             </Switch>
           </Layout>
