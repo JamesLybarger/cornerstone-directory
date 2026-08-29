@@ -95,10 +95,20 @@ export function registerStripeRoutes(app: Express) {
       let event: Stripe.Event;
 
       try {
-        if (!WEBHOOK_SECRET || !sig || !rawBody) {
-          return res.status(503).json({ error: "Stripe webhook verification is not configured" });
+        if (!WEBHOOK_SECRET) {
+          console.error("Webhook: STRIPE_WEBHOOK_SECRET not set");
+          return res.status(503).json({ error: "Webhook secret not configured" });
         }
-        event = stripe.webhooks.constructEvent(rawBody, sig, WEBHOOK_SECRET);
+        if (!sig) {
+          console.error("Webhook: missing stripe-signature header");
+          return res.status(400).json({ error: "Missing signature" });
+        }
+        if (!rawBody) {
+          console.error("Webhook: rawBody is empty, type:", typeof rawBody);
+          return res.status(400).json({ error: "Missing raw body" });
+        }
+        console.log("Webhook: attempting verification, rawBody type:", typeof rawBody, "length:", (rawBody as any)?.length);
+        event = stripe.webhooks.constructEvent(rawBody as Buffer, sig, WEBHOOK_SECRET);
       } catch (e: any) {
         console.error("Webhook sig error:", e.message);
         return res.status(400).json({ error: e.message });
