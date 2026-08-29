@@ -74,10 +74,19 @@ export default function Register() {
     },
   });
 
+  // Check if user came from the "Browse Free" button
+  const isFreeSignup = new URLSearchParams(window.location.search).get("free") === "1" ||
+    (window.location.hash.includes("?") && new URLSearchParams(window.location.hash.split("?")[1]).get("free") === "1");
+
   const onSubmit = async (data: any) => {
     try {
       const result = await authRegister(data);
       setCreatedUser({ id: result.user?.id, tier: result.tier, referralCode: data.referralCode || "" });
+      if (isFreeSignup) {
+        // Skip Stripe — go straight to marketplace
+        setLocation("/marketplace");
+        return;
+      }
       setStep("redirecting");
       // Launch Stripe checkout
       checkoutMutation.mutate({ referralCode: data.referralCode || "" });

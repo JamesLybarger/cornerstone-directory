@@ -148,7 +148,7 @@ export default function Home() {
                 cta: "Browse Free",
                 highlight: false,
                 disabled: false,
-                freeLink: "/directory",
+                freeLink: "/register?free=1",
               },
             ].map((tier) => (
               <Card key={tier.name} className={`card-hover relative flex flex-col ${tier.highlight ? "border-primary/50 shadow-lg shadow-primary/10" : ""}`} data-testid={`card-tier-${tier.name.toLowerCase().replace(/\s/g, '-')}`}>
