@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   useEffect(() => {
-    fetch("/api/auth/me").then(async res => {
+    fetch("/api/auth/me", { credentials: "include" }).then(async res => {
       if (res.ok) setUser(await res.json());
     });
   }, []);
@@ -46,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const res = await fetch("/api/auth/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
@@ -61,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const logout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
+    await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
     setUser(null);
   };
 
