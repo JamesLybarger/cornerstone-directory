@@ -13,6 +13,8 @@ function useHashLocationNoQuery(): [string, (to: string) => void] {
   useEffect(() => {
     const handler = () => setPath(getPath());
     window.addEventListener("hashchange", handler);
+    // Also fire on initial load so Stripe redirect URLs are handled immediately
+    handler();
     return () => window.removeEventListener("hashchange", handler);
   }, []);
   const navigate = useCallback((to: string) => {
