@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { Link, useLocation, useSearch } from "wouter";
 import { useAuth } from "../contexts/AuthContext";
@@ -11,11 +12,25 @@ import { useToast } from "@/hooks/use-toast";
 import { ShoppingBag, BookOpen, CheckCircle, ArrowRight, Lock, Gift, Copy, DollarSign, PartyPopper, Users, Building2, Pencil } from "lucide-react";
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { user, logout, refreshUser } = useAuth();
   const [, setLocation] = useLocation();
   const search = useSearch();
   const paymentStatus = new URLSearchParams(search).get("payment");
   const { toast } = useToast();
+
+  // Re-fetch user after successful membership payment so tier updates immediately
+  useEffect(() => {
+    if (paymentStatus === "success") {
+      // Poll a few times to give the webhook time to update the DB
+      const poll = async () => {
+        for (let i = 0; i < 5; i++) {
+          await new Promise(r => setTimeout(r, 2000));
+          await refreshUser();
+        }
+      };
+      poll();
+    }
+  }, [paymentStatus]);
 
   const { data: orders = [], isLoading: ordersLoading } = useQuery({
     queryKey: ["/api/orders/user", user?.id],
