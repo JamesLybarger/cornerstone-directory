@@ -1,4 +1,5 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useRef } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,8 @@ import {
 
 export default function Home() {
   const { user } = useAuth();
+  const userRef = useRef(user);
+  userRef.current = user;
   const { toast } = useToast();
   const { data: stats } = useQuery({ queryKey: ["/api/stats"], queryFn: () => apiRequest("GET", "/api/stats").then(r => r.json()) });
   const { data: founding } = useQuery({ queryKey: ["/api/founding-spots"], queryFn: () => apiRequest("GET", "/api/founding-spots").then(r => r.json()) });
@@ -43,13 +46,14 @@ export default function Home() {
   });
 
   const handlePlanClick = (tierName: string, freeLink?: string) => {
+    const currentUser = userRef.current;
     if (tierName === "Free Access") {
       window.location.hash = freeLink || "/register?free=1";
       return;
     }
-    if (user) {
+    if (currentUser) {
       // Already logged in — go straight to Stripe
-      toast({ title: `Launching Stripe for ${user.email}...`, duration: 5000 });
+      toast({ title: `Launching Stripe for ${currentUser.email}...`, duration: 5000 });
       upgradeMutation.mutate("");
     } else {
       toast({ title: "No user session found", description: "Redirecting to register", duration: 5000 });
