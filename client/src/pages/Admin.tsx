@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Users, ShieldAlert, RefreshCw } from "lucide-react";
+import { Trash2, Users, ShieldAlert, RefreshCw, Building2 } from "lucide-react";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -21,9 +21,23 @@ export default function Admin() {
     return null;
   }
 
-  const { data: members = [], isLoading, refetch } = useQuery({
+  const { data: members = [], isLoading } = useQuery({
     queryKey: ["/api/members"],
     queryFn: () => apiRequest("GET", "/api/members").then(r => r.json()),
+  });
+
+  const { data: listings = [] } = useQuery({
+    queryKey: ["/api/businesses"],
+    queryFn: () => apiRequest("GET", "/api/businesses").then(r => r.json()),
+  });
+
+  const deleteListingMutation = useMutation({
+    mutationFn: (id: number) => apiRequest("DELETE", `/api/businesses/${id}`, undefined),
+    onSuccess: () => {
+      toast({ title: "Listing deleted", duration: 3000 });
+      queryClient.invalidateQueries({ queryKey: ["/api/businesses"] });
+    },
+    onError: (e: any) => toast({ title: "Error", description: e.message, variant: "destructive" }),
   });
 
   const wipeMutation = useMutation({
@@ -73,6 +87,36 @@ export default function Admin() {
               {wipeMutation.isPending ? <><RefreshCw className="w-4 h-4 mr-2 animate-spin" /> Deleting...</> : "Delete All Test Users"}
             </Button>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Directory Listings */}
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building2 className="w-5 h-5" /> Directory Listings ({listings.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            {listings.map((b: any) => (
+              <div key={b.id} className="flex items-center justify-between p-3 rounded-lg bg-card border border-border">
+                <div>
+                  <p className="font-semibold text-sm text-foreground">{b.businessName}</p>
+                  <p className="text-xs text-muted-foreground">{b.city}, {b.state} — {b.category}</p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => deleteListingMutation.mutate(b.id)}
+                  disabled={deleteListingMutation.isPending}
+                  data-testid={`btn-delete-listing-${b.id}`}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
