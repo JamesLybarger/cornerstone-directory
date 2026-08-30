@@ -257,6 +257,20 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
+  app.delete("/api/businesses/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(String(req.params.id));
+      const user = res.locals.user;
+      if (!user || user.role !== "admin") {
+        return res.status(403).json({ error: "Admin access required." });
+      }
+      await storage.deleteListing(id);
+      res.json({ success: true });
+    } catch (e: any) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   // PRODUCTS
   app.get("/api/products", async (req, res) => res.json(await storage.getAllProducts()));
   app.get("/api/products/featured", async (req, res) => res.json(await storage.getFeaturedProducts()));
