@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Trash2, Users, ShieldAlert, RefreshCw, Building2 } from "lucide-react";
+import { Trash2, Users, ShieldAlert, RefreshCw, Building2, Pencil } from "lucide-react";
 
 export default function Admin() {
   const { user } = useAuth();
@@ -30,6 +30,12 @@ export default function Admin() {
     queryKey: ["/api/businesses"],
     queryFn: () => apiRequest("GET", "/api/businesses").then(r => r.json()),
   });
+
+  // Build a map of userId -> member name for owner display
+  const memberMap = (members as any[]).reduce((acc: any, m: any) => {
+    acc[m.id] = `${m.firstName} ${m.lastName}`;
+    return acc;
+  }, {});
 
   const deleteListingMutation = useMutation({
     mutationFn: (id: number) => apiRequest("DELETE", `/api/businesses/${id}`, undefined),
@@ -104,16 +110,27 @@ export default function Admin() {
                 <div>
                   <p className="font-semibold text-sm text-foreground">{b.businessName}</p>
                   <p className="text-xs text-muted-foreground">{b.city}, {b.state} — {b.category}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Owner: {memberMap[b.userId] || `User #${b.userId}`}</p>
                 </div>
-                <Button
-                  size="sm"
-                  variant="destructive"
-                  onClick={() => deleteListingMutation.mutate(b.id)}
-                  disabled={deleteListingMutation.isPending}
-                  data-testid={`btn-delete-listing-${b.id}`}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setLocation(`/listings/${b.id}/edit`)}
+                    data-testid={`btn-edit-listing-${b.id}`}
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => deleteListingMutation.mutate(b.id)}
+                    disabled={deleteListingMutation.isPending}
+                    data-testid={`btn-delete-listing-${b.id}`}
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
