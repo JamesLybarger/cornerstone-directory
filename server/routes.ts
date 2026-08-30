@@ -329,15 +329,15 @@ export async function registerRoutes(httpServer: Server, app: Express) {
     }
   });
 
-  // ADMIN — upgrade user tier manually
+  // ADMIN — upgrade user tier and/or role manually
   app.post("/api/admin/set-tier", requireAdmin, async (req, res) => {
     try {
-      const { userId, tier } = req.body;
-      if (!userId || !tier) return res.status(400).json({ error: "userId and tier required" });
-      const updated = await storage.updateUser(parseInt(userId), {
-        membershipTier: tier,
-        membershipPrice: tier === "founding" ? 59.99 : tier === "annual" ? 59.99 : 0,
-      });
+      const { userId, tier, role } = req.body;
+      if (!userId) return res.status(400).json({ error: "userId required" });
+      const updates: any = {};
+      if (tier) { updates.membershipTier = tier; updates.membershipPrice = tier === "founding" ? 59.99 : tier === "annual" ? 59.99 : 0; }
+      if (role) updates.role = role;
+      const updated = await storage.updateUser(parseInt(userId), updates);
       if (!updated) return res.status(404).json({ error: "User not found" });
       const { password: _, ...safe } = updated;
       res.json(safe);
